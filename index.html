@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBA Market - Rate & Earn</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        oba: {
+                            dark: '#00382B',   // Deep Forest Green
+                            receipt: '#1B4D3E', // Receipt Header Green
+                            light: '#005C42',  // Lighter Gradient
+                            gold: '#FFC700',   // OBA Gold
+                            red: '#EF4444',    // Discount Red
+                            surface: '#F9FAFB' // Off-white
+                        }
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 0.5s ease-in-out 1',
+                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                        'pulse-gold': 'pulseGold 2s infinite'
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        pulseGold: {
+                            '0%, 100%': { boxShadow: '0 0 0 0 rgba(255, 199, 0, 0.7)' },
+                            '50%': { boxShadow: '0 0 0 10px rgba(255, 199, 0, 0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- LOGIC ENGINE -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('obaApp', () => ({
+                currentView: 'auth', // 'auth' or 'app'
+                authMode: 'login',
+                activeTab: 'home',
+                searchQuery: '',
+                selectedCategory: 'All',
+                showAllReceipts: false, 
+                
+                // User State
+                user: {
+                    name: '',
+                    surname: '',
+                    points: 28, 
+                    rank: 'Bronze Neighbor'
+                },
+
+                // Auth Forms
+                loginForm: { phone: '', password: '' },
+                regForm: { name: '', surname: '', age: '', phone: '', password: '', confirmPassword: '' },
+
+                // Logic State
+                ratingSessionCount: 0,
+                selectedReceipt: null,
+                feedbackModalOpen: false,
+                selectedRatingItem: null,
+                showCelebration: false,
+                toast: { visible: false, message: '', type: 'success' },
+
+                // --- DATA ---
+                categories: ['All', 'Dairy', 'Meats', 'Grocery', 'Sweets', 'Drinks', 'Hygiene', 'Cleaning'],
+                
+                // EXTRACTED FROM PDF (MASSIVE DATABASE)
+                products: [
+                    // --- PAGE 1: HERO ITEMS ---
+                    { name: 'Shine Kərə Yağı 82% 1kg', category: 'Dairy', oldPrice: '19.99', newPrice: '14.99', discount: '-25%' },
+                    { name: 'Möcüzə Qarğıdalı Yağı 1L', category: 'Grocery', oldPrice: '6.95', newPrice: '5.79', discount: '-16%' },
+                    { name: 'Moskovskiy Mayonez 55% 850ml', category: 'Grocery', oldPrice: '6.89', newPrice: '5.49', discount: '-20%' },
+                    { name: 'Shah Qara Çay 400g', category: 'Drinks', oldPrice: '10.50', newPrice: '6.99', discount: '-33%' },
+                    { name: 'Ariel Yuyucu Toz 5kg', category: 'Cleaning', oldPrice: '39.39', newPrice: '15.99', discount: '-59%' },
+                    { name: 'Elidor Şampun 400ml', category: 'Hygiene', oldPrice: '7.99', newPrice: '4.99', discount: '-37%' },
+
+                    // --- PAGE 3: MEATS ---
+                    { name: 'Tamdad Sosis Tavada 1kg', category: 'Meats', oldPrice: '13.99', newPrice: '7.99', discount: '-42%' },
+                    { name: 'Soyulmuş Şabalıd 250g', category: 'Grocery', oldPrice: '5.75', newPrice: '4.99', discount: '-13%' },
+                    { name: 'Miratorq Pelmeni 700g', category: 'Meats', oldPrice: '6.59', newPrice: '3.99', discount: '-39%' },
+                    { name: 'Tamdad Hindquşu Kolbasa 500g', category: 'Meats', oldPrice: '6.49', newPrice: '4.49', discount: '-30%' },
+                    { name: 'Sədəf Servelat Kolbasa 1kg', category: 'Meats', oldPrice: '15.89', newPrice: '12.59', discount: '-20%' },
+                    { name: 'Nəfis Dad Servelat 1kg', category: 'Meats', oldPrice: '9.89', newPrice: '6.99', discount: '-29%' },
+                    { name: 'Sədəf Izqara Sosis 1kg', category: 'Meats', oldPrice: '12.99', newPrice: '6.99', discount: '-46%' },
+                    { name: 'Nəfis Dad Sosis 1kg', category: 'Meats', oldPrice: '5.89', newPrice: '4.69', discount: '-20%' },
+
+                    // --- PAGE 4: DAIRY (SOUR CREAM/CHEESE) ---
+                    { name: 'Romaşka Xama 25% 180g', category: 'Dairy', oldPrice: '3.39', newPrice: '2.99', discount: '-11%' },
+                    { name: 'Kalleh Qaymaq 200g', category: 'Dairy', oldPrice: '1.39', newPrice: '0.99', discount: '-28%' },
+                    { name: 'Ehrmann Xama 15% 320g', category: 'Dairy', oldPrice: '4.30', newPrice: '3.50', discount: '-18%' },
+                    { name: 'Milla Xama 20% 300g', category: 'Dairy', oldPrice: '2.99', newPrice: '2.49', discount: '-16%' },
+                    { name: 'Willie Pendir 100g', category: 'Dairy', oldPrice: '1.49', newPrice: '1.19', discount: '-20%' },
+                    { name: 'Atena Ağ Pendir 1kg', category: 'Dairy', oldPrice: '8.99', newPrice: '7.00', discount: '-22%' },
+                    { name: 'Hər Gün Favorit Pendir 250g', category: 'Dairy', oldPrice: '3.29', newPrice: '2.85', discount: '-13%' },
+
+                    // --- PAGE 5: BUTTER & OILS ---
+                    { name: 'Vanak Kərə Yağı 1kg', category: 'Dairy', oldPrice: '18.99', newPrice: '12.99', discount: '-31%' },
+                    { name: 'Derevenskiye Spred Yağ 180g', category: 'Dairy', oldPrice: '1.79', newPrice: '1.09', discount: '-39%' },
+                    { name: 'Maslyona Spred Yağ 5kg', category: 'Dairy', oldPrice: '32.95', newPrice: '28.45', discount: '-13%' },
+                    { name: 'Super Sun Əridilmiş Yağ 1.7kg', category: 'Grocery', oldPrice: '23.20', newPrice: '20.89', discount: '-10%' },
+                    { name: 'Hər Gün Kərə Yağı 180g', category: 'Dairy', oldPrice: '4.59', newPrice: '3.49', discount: '-24%' },
+                    { name: 'Lara Kərə Yağı 1kg', category: 'Dairy', oldPrice: '19.99', newPrice: '12.99', discount: '-35%' },
+                    { name: 'Atena Süd 1L', category: 'Dairy', oldPrice: '2.39', newPrice: '2.05', discount: '-14%' },
+
+                    // --- PAGE 6: YOGURTS ---
+                    { name: 'Hər Gün Şor 350g', category: 'Dairy', oldPrice: '1.99', newPrice: '1.78', discount: '-10%' },
+                    { name: 'Atena Süd 3.2% 1L', category: 'Dairy', oldPrice: '2.65', newPrice: '2.25', discount: '-15%' },
+                    { name: 'Milla Ayran 300ml', category: 'Dairy', oldPrice: '1.00', newPrice: '0.89', discount: '-11%' },
+                    { name: 'Atena Qatıq 3.6% 500g', category: 'Dairy', oldPrice: '1.99', newPrice: '1.65', discount: '-17%' },
+                    { name: 'Milla Kəsmik 180g', category: 'Dairy', oldPrice: '2.29', newPrice: '1.99', discount: '-13%' },
+                    { name: 'Alpena Yoqurt 90g', category: 'Dairy', oldPrice: '0.50', newPrice: '0.45', discount: '-10%' },
+
+                    // --- PAGE 7: OILS & DRINKS ---
+                    { name: 'Verde Zeytun Yağı 750ml', category: 'Grocery', oldPrice: '13.49', newPrice: '7.99', discount: '-40%' },
+                    { name: 'Danone Yoqurt 100g', category: 'Dairy', oldPrice: '0.55', newPrice: '0.45', discount: '-18%' },
+                    { name: 'Milla İçməli Yoqurt 270ml', category: 'Dairy', oldPrice: '1.59', newPrice: '1.39', discount: '-12%' },
+                    { name: 'Maslava Günəbaxan Yağı 870ml', category: 'Grocery', oldPrice: '3.69', newPrice: '2.99', discount: '-19%' },
+                    { name: 'Zateya Günəbaxan Yağı 1.8L', category: 'Grocery', oldPrice: '8.95', newPrice: '6.99', discount: '-21%' },
+                    { name: 'Safran Qarğıdalı Yağı 1L', category: 'Grocery', oldPrice: '6.49', newPrice: '5.49', discount: '-15%' },
+
+                    // --- PAGE 8: GRAINS & PASTA ---
+                    { name: 'Alemshah Basmati Düyü 1.7kg', category: 'Grocery', oldPrice: '8.99', newPrice: '6.99', discount: '-22%' },
+                    { name: 'Qarğıdalı Dənələri 650g', category: 'Grocery', oldPrice: '1.75', newPrice: '1.55', discount: '-11%' },
+                    { name: 'Fellini Qarabaşaq 700g', category: 'Grocery', oldPrice: '1.39', newPrice: '0.99', discount: '-28%' },
+                    { name: 'Sultan Basmati Düyü 2kg', category: 'Grocery', oldPrice: '9.05', newPrice: '8.14', discount: '-10%' },
+                    { name: 'Ankara Makaron 500g', category: 'Grocery', oldPrice: '1.90', newPrice: '1.49', discount: '-21%' },
+                    { name: 'Sabella Makaron 500g', category: 'Grocery', oldPrice: '1.19', newPrice: '0.89', discount: '-25%' },
+
+                    // --- PAGE 9: CANNED ---
+                    { name: 'Deniz Ton Balığı 180g', category: 'Grocery', oldPrice: '4.89', newPrice: '3.59', discount: '-26%' },
+                    { name: 'Tanelli Makaron 1kg', category: 'Grocery', oldPrice: '1.45', newPrice: '1.09', discount: '-24%' },
+                    { name: 'Bismak Un 1kg', category: 'Grocery', oldPrice: '1.65', newPrice: '1.39', discount: '-15%' },
+                    { name: 'Doymak Un 2kg', category: 'Grocery', oldPrice: '3.30', newPrice: '2.69', discount: '-18%' },
+                    { name: 'Mal Əti Konservi 500g', category: 'Grocery', oldPrice: '5.89', newPrice: '4.39', discount: '-25%' },
+                    { name: 'Tada Ton Balığı 160g', category: 'Grocery', oldPrice: '3.85', newPrice: '2.79', discount: '-27%' },
+                    { name: 'Kilka Tomatda 240g', category: 'Grocery', oldPrice: '2.55', newPrice: '1.79', discount: '-29%' },
+
+                    // --- PAGE 10: SAUCES ---
+                    { name: 'Merma Mayonez 192ml', category: 'Grocery', oldPrice: '1.99', newPrice: '1.69', discount: '-15%' },
+                    { name: 'Astoria Ketçup 200g', category: 'Grocery', oldPrice: '1.29', newPrice: '0.99', discount: '-23%' },
+                    { name: 'Moskovskiy Mayonez 390ml', category: 'Grocery', oldPrice: '3.19', newPrice: '2.59', discount: '-18%' },
+                    { name: 'Aylar Tomat Pastası 700g', category: 'Grocery', oldPrice: '2.99', newPrice: '2.39', discount: '-20%' },
+                    { name: 'Bizim Tarla Pomidor 660g', category: 'Grocery', oldPrice: '2.85', newPrice: '2.49', discount: '-12%' },
+                    { name: 'Evden Acı Bibər 720g', category: 'Grocery', oldPrice: '5.49', newPrice: '4.39', discount: '-20%' },
+                    { name: 'Safran Pomidor Turşusu', category: 'Grocery', oldPrice: '2.59', newPrice: '1.89', discount: '-27%' },
+
+                    // --- PAGE 11: PICKLES & HONEY ---
+                    { name: 'Safran Xiyar Turşusu 1.5kg', category: 'Grocery', oldPrice: '3.79', newPrice: '2.95', discount: '-22%' },
+                    { name: 'Safran Pomidor Turşusu 720g', category: 'Grocery', oldPrice: '2.09', newPrice: '1.69', discount: '-19%' },
+                    { name: 'Safran Assorti Turşu 720g', category: 'Grocery', oldPrice: '2.19', newPrice: '1.69', discount: '-22%' },
+                    { name: 'Safran Üzüm Sirkəsi 2.8L', category: 'Grocery', oldPrice: '2.19', newPrice: '1.89', discount: '-13%' },
+                    { name: 'Gədəbəy Bal 250g', category: 'Grocery', oldPrice: '2.79', newPrice: '2.49', discount: '-10%' },
+                    { name: 'Nescafe Gold Qəhvə 47g', category: 'Drinks', oldPrice: '7.99', newPrice: '6.59', discount: '-17%' },
+                    { name: 'Nescafe Classic 47g', category: 'Drinks', oldPrice: '5.49', newPrice: '4.19', discount: '-23%' },
+
+                    // --- PAGE 12: TEA & COFFEE ---
+                    { name: 'Nescafe Gold Qəhvə 190g', category: 'Drinks', oldPrice: '22.49', newPrice: '12.99', discount: '-42%' },
+                    { name: 'Pan Coffee Cappuccino', category: 'Drinks', oldPrice: '0.59', newPrice: '0.49', discount: '-16%' },
+                    { name: 'Beta Selected Çay 25pc', category: 'Drinks', oldPrice: '2.40', newPrice: '1.99', discount: '-17%' },
+                    { name: 'Beta Earl Grey 25pc', category: 'Drinks', oldPrice: '2.70', newPrice: '2.19', discount: '-18%' },
+                    { name: 'Beta Yaşıl Çay 100g', category: 'Drinks', oldPrice: '2.60', newPrice: '2.19', discount: '-15%' },
+                    { name: 'Shah Gold Çay 2g', category: 'Drinks', oldPrice: '1.99', newPrice: '1.35', discount: '-32%' },
+                    { name: 'Mouslum Qara Çay 200g', category: 'Drinks', oldPrice: '5.69', newPrice: '4.59', discount: '-19%' },
+                    { name: 'Hekaya Buket Çay 200g', category: 'Drinks', oldPrice: '5.29', newPrice: '3.59', discount: '-32%' },
+
+                    // --- PAGE 13: TEA & CHIPS ---
+                    { name: 'Azerçay Buket 225g', category: 'Drinks', oldPrice: '6.95', newPrice: '5.99', discount: '-13%' },
+                    { name: 'Champion Pekoe Çay 250g', category: 'Drinks', oldPrice: '7.60', newPrice: '6.19', discount: '-18%' },
+                    { name: 'Berqa Ətirli Çay 450g', category: 'Drinks', oldPrice: '13.65', newPrice: '11.29', discount: '-17%' },
+                    { name: 'Printsess Nuri Çay 500g', category: 'Drinks', oldPrice: '11.69', newPrice: '7.99', discount: '-31%' },
+                    { name: 'Doritos Çipsi 70g', category: 'Sweets', oldPrice: '1.79', newPrice: '1.35', discount: '-24%' },
+                    { name: 'Doritos Çipsi 130g', category: 'Sweets', oldPrice: '3.49', newPrice: '2.59', discount: '-25%' },
+                    { name: 'Chipsim 140g', category: 'Sweets', oldPrice: '2.79', newPrice: '2.29', discount: '-17%' },
+                    { name: 'Beloçka Tumu 70g', category: 'Sweets', oldPrice: '0.70', newPrice: '0.55', discount: '-21%' },
+
+                    // --- PAGE 14: SNACKS ---
+                    { name: 'Çiko Qara Tum 100g', category: 'Sweets', oldPrice: '1.40', newPrice: '1.09', discount: '-22%' },
+                    { name: 'Beloçka Dakota Tum 100g', category: 'Sweets', oldPrice: '1.40', newPrice: '0.99', discount: '-29%' },
+                    { name: 'Xrus Team Suxarı 30g', category: 'Sweets', oldPrice: '0.40', newPrice: '0.29', discount: '-27%' },
+                    { name: 'Fanat Suxarı 60g', category: 'Sweets', oldPrice: '0.65', newPrice: '0.55', discount: '-15%' },
+                    { name: 'Trend Qarğıdalı Çubuğu', category: 'Sweets', oldPrice: '1.39', newPrice: '0.99', discount: '-28%' },
+                    { name: 'Maredo Qara Üzüm 250g', category: 'Sweets', oldPrice: '4.69', newPrice: '3.99', discount: '-15%' },
+                    { name: 'Safran Kakao 25g', category: 'Grocery', oldPrice: '1.10', newPrice: '0.99', discount: '-10%' },
+
+                    // --- PAGE 15: BREAKFAST ---
+                    { name: 'Nestle Şokoladlı Səhər', category: 'Sweets', oldPrice: '3.19', newPrice: '2.29', discount: '-28%' },
+                    { name: 'Pakmaya Xəmir Mayası', category: 'Grocery', oldPrice: '0.91', newPrice: '0.75', discount: '-17%' },
+                    { name: 'Doşirak Hazır Yemək', category: 'Grocery', oldPrice: '1.50', newPrice: '1.29', discount: '-14%' },
+                    { name: 'Snegiri Yulaf Lopaları', category: 'Grocery', oldPrice: '2.19', newPrice: '1.95', discount: '-10%' },
+                    { name: 'Azərşəkər Kəllə Qənd', category: 'Grocery', oldPrice: '11.65', newPrice: '10.49', discount: '-10%' },
+                    { name: 'Parkur Şokolad', category: 'Sweets', oldPrice: '8.99', newPrice: '7.59', discount: '-15%' },
+
+                    // --- PAGE 16: CHOCOLATES ---
+                    { name: 'Kit Kat Mini 1kg', category: 'Sweets', oldPrice: '34.99', newPrice: '25.99', discount: '-25%' },
+                    { name: 'Nevskiy Şokolad 1kg', category: 'Sweets', oldPrice: '10.99', newPrice: '8.99', discount: '-18%' },
+                    { name: 'Kovboy Djonni Konfet', category: 'Sweets', oldPrice: '11.99', newPrice: '7.99', discount: '-33%' },
+                    { name: 'Estella Konfet 1kg', category: 'Sweets', oldPrice: '10.29', newPrice: '7.99', discount: '-22%' },
+                    { name: 'Aidin Snowpy', category: 'Sweets', oldPrice: '9.99', newPrice: '7.99', discount: '-20%' },
+                    { name: 'Maredo Milk Like Konfet', category: 'Sweets', oldPrice: '9.39', newPrice: '6.99', discount: '-25%' },
+                    { name: 'Maredo Crunch Vafli', category: 'Sweets', oldPrice: '12.99', newPrice: '9.99', discount: '-23%' },
+
+                    // --- PAGE 22: CHOCOLATE BARS ---
+                    { name: 'Alpen Gold Şokolad', category: 'Sweets', oldPrice: '4.20', newPrice: '2.29', discount: '-45%' },
+                    { name: 'Kit Kat Şokolad', category: 'Sweets', oldPrice: '1.99', newPrice: '1.45', discount: '-27%' },
+                    { name: 'Albeni Şokolad', category: 'Sweets', oldPrice: '1.50', newPrice: '1.25', discount: '-16%' },
+                    { name: 'Nestle Şokolad', category: 'Sweets', oldPrice: '3.39', newPrice: '1.99', discount: '-41%' },
+                    { name: 'Çudo Vkusa Şokolad', category: 'Sweets', oldPrice: '1.99', newPrice: '1.59', discount: '-20%' },
+                    { name: 'Boool Şokolad Kremi', category: 'Sweets', oldPrice: '3.99', newPrice: '3.39', discount: '-15%' },
+
+                    // --- PAGE 23: WATER & JUICE ---
+                    { name: 'Moy Meyvə Şirəsi 950ml', category: 'Drinks', oldPrice: '1.95', newPrice: '1.59', discount: '-18%' },
+                    { name: 'Nabeglavi Mineral Su', category: 'Drinks', oldPrice: '1.35', newPrice: '1.15', discount: '-14%' },
+                    { name: 'Badamlı Qazsız Su 500ml', category: 'Drinks', oldPrice: '0.60', newPrice: '0.49', discount: '-18%' },
+                    { name: 'Hər Gün Qazsız Su 500ml', category: 'Drinks', oldPrice: '0.35', newPrice: '0.25', discount: '-28%' },
+                    { name: 'Hər Gün Qazsız Su 5L', category: 'Drinks', oldPrice: '1.49', newPrice: '1.19', discount: '-20%' },
+                    { name: 'Slavyanka Qazsız Su 1L', category: 'Drinks', oldPrice: '0.84', newPrice: '0.69', discount: '-17%' },
+                    { name: 'Natura Meyvə Şirəsi', category: 'Drinks', oldPrice: '0.60', newPrice: '0.50', discount: '-16%' },
+
+                    // --- PAGE 24: SODA ---
+                    { name: 'Pepsi Qazlı İçki 1L', category: 'Drinks', oldPrice: '1.39', newPrice: '1.15', discount: '-17%' },
+                    { name: 'Moy Meyvə Şirəsi 2L', category: 'Drinks', oldPrice: '3.75', newPrice: '3.35', discount: '-10%' },
+                    { name: 'Smeşariki Meyvə Şirəsi', category: 'Drinks', oldPrice: '1.49', newPrice: '1.29', discount: '-13%' },
+                    { name: 'Positivity Meyvə Şirəsi', category: 'Drinks', oldPrice: '1.59', newPrice: '1.19', discount: '-25%' },
+                    { name: 'Gülüstan Qazlı İçki', category: 'Drinks', oldPrice: '1.20', newPrice: '0.99', discount: '-17%' },
+                    { name: 'Trend Qazlı İçki', category: 'Drinks', oldPrice: '0.65', newPrice: '0.49', discount: '-24%' },
+                    { name: 'Trend Ice Tea', category: 'Drinks', oldPrice: '1.00', newPrice: '0.79', discount: '-21%' },
+
+                    // --- PAGE 27: HYGIENE ---
+                    { name: 'Aura Mətbəx Salfeti', category: 'Cleaning', oldPrice: '4.72', newPrice: '2.79', discount: '-40%' },
+                    { name: 'Papia Tualet Kağızı 4pc', category: 'Hygiene', oldPrice: '4.59', newPrice: '2.49', discount: '-45%' },
+                    { name: 'Sun Salfet 80pc', category: 'Hygiene', oldPrice: '1.15', newPrice: '0.89', discount: '-22%' },
+                    { name: 'DePapi Salfet', category: 'Hygiene', oldPrice: '1.35', newPrice: '0.99', discount: '-26%' },
+                    { name: 'Klar Yuyucu Toz 1.35kg', category: 'Cleaning', oldPrice: '3.45', newPrice: '2.49', discount: '-27%' },
+                    { name: 'ABC Yuyucu Toz 1.5kg', category: 'Cleaning', oldPrice: '5.65', newPrice: '4.99', discount: '-11%' },
+                    { name: 'Alafran Yuyucu Toz 9kg', category: 'Cleaning', oldPrice: '17.99', newPrice: '11.99', discount: '-33%' },
+
+                    // --- PAGE 28: CLEANING ---
+                    { name: 'Bingo Yuyucu Toz 6kg', category: 'Cleaning', oldPrice: '19.99', newPrice: '11.99', discount: '-40%' },
+                    { name: 'ABC Yuyucu Vasitə', category: 'Cleaning', oldPrice: '7.45', newPrice: '5.99', discount: '-19%' },
+                    { name: 'Bos Ağardıcı', category: 'Cleaning', oldPrice: '3.45', newPrice: '2.49', discount: '-27%' },
+                    { name: 'Çistin Qabyuyan', category: 'Cleaning', oldPrice: '1.79', newPrice: '1.19', discount: '-33%' },
+                    { name: 'Klar Ağardıcı 2.5L', category: 'Cleaning', oldPrice: '2.79', newPrice: '1.99', discount: '-28%' },
+                    { name: 'Huggies Uşaq Bezi', category: 'Hygiene', oldPrice: '4.39', newPrice: '2.99', discount: '-31%' },
+
+                    // --- PAGE 29: HYGIENE II ---
+                    { name: 'Lovbe Qabyuyan Maye', category: 'Cleaning', oldPrice: '2.50', newPrice: '1.29', discount: '-48%' },
+                    { name: 'Predo Uşaq Bezi', category: 'Hygiene', oldPrice: '18.90', newPrice: '12.99', discount: '-31%' },
+                    { name: 'Splat Diş Məcunu', category: 'Hygiene', oldPrice: '2.99', newPrice: '0.99', discount: '-66%' },
+                    { name: 'Colgate Diş Məcunu', category: 'Hygiene', oldPrice: '3.09', newPrice: '2.49', discount: '-19%' },
+                    { name: 'Libresse Qadın Bezi', category: 'Hygiene', oldPrice: '3.49', newPrice: '1.99', discount: '-43%' },
+                    { name: 'Molped Qadın Bezi', category: 'Hygiene', oldPrice: '6.32', newPrice: '3.59', discount: '-43%' },
+
+                    // --- PAGE 30: SOAP ---
+                    { name: 'Kotex Ultra Qadın Bezi', category: 'Hygiene', oldPrice: '4.09', newPrice: '1.99', discount: '-51%' },
+                    { name: 'Diana Sabun 5pc', category: 'Hygiene', oldPrice: '2.59', newPrice: '1.99', discount: '-23%' },
+                    { name: 'Arko Sabun 90g', category: 'Hygiene', oldPrice: '1.39', newPrice: '0.89', discount: '-36%' },
+                    { name: 'Trendy Təsərrüfat Sabunu', category: 'Cleaning', oldPrice: '0.55', newPrice: '0.45', discount: '-18%' },
+                    { name: 'Sədəf Təsərrüfat Sabunu', category: 'Cleaning', oldPrice: '0.85', newPrice: '0.59', discount: '-30%' },
+                    { name: 'Duru Duş Geli 450ml', category: 'Hygiene', oldPrice: '6.39', newPrice: '4.49', discount: '-29%' },
+                    { name: 'Fax Dezodorant', category: 'Hygiene', oldPrice: '3.99', newPrice: '2.99', discount: '-25%' },
+
+                    // --- PAGE 33: CHECKOUT SPECIALS ---
+                    { name: 'Patron Günəbaxan Tumu', category: 'Sweets', oldPrice: '1.40', newPrice: '1.09', discount: '-22%' },
+                    { name: 'Çudo Vkusa Vafli', category: 'Sweets', oldPrice: '2.19', newPrice: '1.65', discount: '-24%' },
+                    { name: 'Klar Ultra Qabyuyan', category: 'Cleaning', oldPrice: '2.80', newPrice: '1.99', discount: '-28%' },
+                    { name: 'Spring Blossom Sabun', category: 'Hygiene', oldPrice: '2.50', newPrice: '1.59', discount: '-36%' }
+                ],
+
+                receipts: [
+                    { 
+                        id: 4890, date: '08 Dec', time: '14:15', total: '8.90', subtotal: '9.10', savings: '-0.20', status: 'Rated',
+                        items: [
+                            { name: 'Magnum Ice Cream', qty: 2, price: '5.00', rated: true },
+                            { name: 'OBA Wet Wipes', qty: 1, price: '1.50', rated: true },
+                            { name: 'Gum', qty: 2, price: '1.40', rated: true },
+                            { name: 'Water 0.5L', qty: 2, price: '1.00', rated: true }
+                        ]
+                    },
+                    { 
+                        id: 1001, date: 'Yesterday', time: '18:30', total: '34.45', subtotal: '34.45', savings: '0.00', status: 'Unrated', 
+                        items: [
+                            { name: 'Möcüzə Corn Oil 1L', qty: 1, price: '5.79', rated: false }, 
+                            { name: 'Ariel Detergent 5kg', qty: 1, price: '15.99', rated: false }, 
+                            { name: 'Dorna Donut', qty: 3, price: '0.39', rated: false },
+                            { name: 'Lay\'s Çipsi 140g', qty: 2, price: '2.29', rated: false },
+                            { name: 'Papia Tualet Kağızı 8pcs', qty: 1, price: '2.49', rated: false }
+                        ] 
+                    },
+                    { 
+                        id: 1002, date: '3 Days Ago', time: '09:12', total: '28.03', subtotal: '30.03', savings: '-2.00', status: 'Unrated', 
+                        items: [
+                            { name: 'Pepsi 1L', qty: 2, price: '1.15', rated: false }, 
+                            { name: 'KitKat Mini', qty: 1, price: '25.99', rated: false }, 
+                            { name: 'OBA PL Wafers', qty: 2, price: '0.89', rated: false }
+                        ] 
+                    }
+                ],
+
+                // --- COMPUTED ---
+                get filteredProducts() {
+                    return this.products.filter(p => {
+                        const matchesCat = this.selectedCategory === 'All' || p.category === this.selectedCategory;
+                        const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return matchesCat && matchesSearch;
+                    });
+                },
+
+                // --- METHODS ---
+
+                // SMART IMAGE SYSTEM: Checks product name for keywords
+                getProductImage(product) {
+                    const name = product.name.toLowerCase();
+                    
+                    // Specific Mappings
+                    if (name.includes('yağ') || name.includes('oil')) {
+                        if (name.includes('zeytun')) return 'https://images.unsplash.com/photo-1474979266404-7cadd259f36b?auto=format&fit=crop&w=300&q=80'; // Olive
+                        if (name.includes('kərə') || name.includes('butter')) return 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=300&q=80'; // Butter
+                        return 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?auto=format&fit=crop&w=300&q=80'; // General Oil
+                    }
+                    if (name.includes('çay') || name.includes('tea')) return 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('qəhvə') || name.includes('coffee') || name.includes('nescafe')) return 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('sokolad') || name.includes('şokolad') || name.includes('chocolate') || name.includes('kit kat')) return 'https://images.unsplash.com/photo-1629683935293-1e5e01c80911?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('konfet') || name.includes('candy')) return 'https://images.unsplash.com/photo-1579338559194-a162d19bf842?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('sosis') || name.includes('sausage')) return 'https://images.unsplash.com/photo-1585325701165-351af916e581?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('kolbasa') || name.includes('salami')) return 'https://images.unsplash.com/photo-1556096531-15579f164627?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('makaron') || name.includes('pasta')) return 'https://images.unsplash.com/photo-1551462147-37885acc36f1?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('düyü') || name.includes('rice')) return 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('pendir') || name.includes('cheese')) return 'https://images.unsplash.com/photo-1621801306399-56e6d1ac8e77?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('süd') || name.includes('milk')) return 'https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('yuyucu') || name.includes('detergent') || name.includes('toz')) return 'https://images.unsplash.com/photo-1585833805760-e5f3b7d03a15?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('sabun') || name.includes('soap')) return 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('şampun') || name.includes('shampoo')) return 'https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('bez') || name.includes('diaper')) return 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('şirə') || name.includes('juice')) return 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('su') || name.includes('water')) return 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('pepsi') || name.includes('cola')) return 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('çipsi') || name.includes('chips')) return 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('tum') || name.includes('seeds')) return 'https://images.unsplash.com/photo-1528750614357-19446a8647bc?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('xama') || name.includes('cream')) return 'https://images.unsplash.com/photo-1624451000853-918991b1c67d?auto=format&fit=crop&w=300&q=80';
+
+                    // Fallbacks by Category
+                    const catMap = {
+                        'Dairy': 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=300&q=80',
+                        'Meats': 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=300&q=80',
+                        'Grocery': 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80',
+                        'Drinks': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=300&q=80',
+                        'Sweets': 'https://images.unsplash.com/photo-1579338559194-a162d19bf842?auto=format&fit=crop&w=300&q=80',
+                        'Hygiene': 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=300&q=80',
+                        'Cleaning': 'https://images.unsplash.com/photo-1585833805760-e5f3b7d03a15?auto=format&fit=crop&w=300&q=80'
+                    };
+                    return catMap[product.category] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
+                },
+
+                login() {
+                    if (this.loginForm.phone.length < 3) return this.showToast('Invalid Phone', 'error');
+                    this.user.name = 'Orkhan';
+                    this.user.surname = 'Aliyev';
+                    this.currentView = 'app';
+                },
+
+                register() {
+                    if (parseInt(this.regForm.age) < 18) {
+                        return this.showToast('You must be 18+ to register', 'error');
+                    }
+                    if (this.regForm.password !== this.regForm.confirmPassword) {
+                        return this.showToast('Passwords do not match', 'error');
+                    }
+                    if (!this.regForm.name) return this.showToast('Name is required', 'error');
+                    
+                    this.user.name = this.regForm.name;
+                    this.user.surname = this.regForm.surname;
+                    this.currentView = 'app';
+                },
+
+                logout() {
+                    this.currentView = 'auth';
+                    this.authMode = 'login';
+                },
+
+                openReceipt(bill) {
+                    if(bill.status === 'Rated' && bill.items.length === 0) return this.showToast('Receipt already fully rated', 'success');
+                    this.selectedReceipt = bill;
+                },
+
+                rateItem(item, stars) {
+                    if (this.ratingSessionCount >= 3) {
+                        return this.showToast('Daily limit reached (3/3). Come back tomorrow!', 'error');
+                    }
+                    this.selectedRatingItem = item; 
+                    if (stars >= 3) {
+                        this.finalizeRating(item);
+                        this.showToast('+1 Point Added!', 'success');
+                    } else {
+                        this.feedbackModalOpen = true;
+                    }
+                },
+
+                submitFeedback() {
+                    this.feedbackModalOpen = false;
+                    this.finalizeRating(this.selectedRatingItem);
+                    this.showToast('Feedback received. +1 Point Added!', 'success');
+                },
+
+                finalizeRating(item) {
+                    item.rated = true;
+                    this.ratingSessionCount++;
+                    this.addPoint();
+                    if (this.selectedReceipt.items.every(i => i.rated)) {
+                        this.selectedReceipt.status = 'Rated';
+                    }
+                },
+
+                addPoint() {
+                    this.user.points++;
+                    this.checkRank();
+                    if (this.user.points === 30) {
+                        setTimeout(() => {
+                            this.showCelebration = true;
+                            this.selectedReceipt = null; 
+                        }, 500);
+                    }
+                },
+
+                checkRank() {
+                    if (this.user.points >= 150) this.user.rank = 'Golden Partner';
+                    else if (this.user.points >= 50) this.user.rank = 'Silver Friend';
+                    else this.user.rank = 'Bronze Neighbor';
+                },
+
+                claimReward() {
+                    this.showCelebration = false;
+                    this.showToast('Reward Saved to "Ranks" Tab!', 'success');
+                },
+
+                showToast(msg, type) {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false }, 3000);
+                }
+            }))
+        })
+    </script>
+
+    <!-- Alpine.js (Must be deferred) -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        /* Custom Scrollbar hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Glassmorphism */
+        .glass-dark {
+            background: rgba(0, 56, 43, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Scalloped Edge for Receipt */
+        .receipt-scallop {
+            background: radial-gradient(circle, transparent 50%, #ffffff 50%) -10px -5px;
+            background-size: 20px 20px;
+            background-repeat: repeat-x;
+            height: 15px;
+            width: 100%;
+            transform: rotate(180deg);
+        }
+
+        /* Celebration Particles */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #FFC700;
+            animation: confetti-fall 3s linear infinite;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(800px) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased text-gray-800">
+
+    <!-- APP CONTAINER -->
+    <div id="app" x-data="obaApp()" class="w-full min-h-screen bg-gray-50 overflow-x-hidden relative" :class="{'bg-oba-dark': currentView === 'auth'}">
+
+        <!-- AUTH VIEW -->
+        <div x-show="currentView === 'auth'" x-transition.opacity.duration.500ms class="w-full min-h-screen flex flex-col justify-center px-8 relative z-10">
+            <div class="absolute top-[-10%] left-[-10%] w-64 h-64 bg-oba-light rounded-full blur-3xl opacity-30"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-oba-gold rounded-full blur-3xl opacity-20"></div>
+
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4">
+                    <span class="text-4xl font-extrabold text-oba-dark tracking-tighter">OBA</span>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">Welcome Neighbor</h1>
+                <p class="text-gray-300 text-sm">Sign in to start earning rewards.</p>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="flex bg-white/10 p-1 rounded-xl mb-8 backdrop-blur-sm">
+                <button @click="authMode = 'login'" :class="{'bg-oba-gold text-black shadow-md': authMode === 'login', 'text-white': authMode !== 'login'}" class="flex-1 py-3 rounded-lg text-sm font-semibold transition-all">Log In</button>
+                <button @click="authMode = 'register'" :class="{'bg-oba-gold text-black shadow-md': authMode === 'register', 'text-white': authMode !== 'register'}" class="flex-1 py-3 rounded-lg text-sm font-semibold transition-all">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <div x-show="authMode === 'login'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                <div class="space-y-4">
+                    <input type="tel" x-model="loginForm.phone" placeholder="Mobile Number (+994)" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-oba-gold focus:ring-1 focus:ring-oba-gold transition-all">
+                    <input type="password" x-model="loginForm.password" placeholder="Password" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-oba-gold transition-all">
+                    <button @click="login()" class="w-full bg-oba-gold hover:bg-yellow-400 text-oba-dark font-bold py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">Log In</button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div x-show="authMode === 'register'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" x-model="regForm.name" placeholder="Name" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white">
+                        <input type="text" x-model="regForm.surname" placeholder="Surname" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white">
+                    </div>
+                    <input type="number" x-model="regForm.age" placeholder="Age" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white">
+                    <input type="tel" x-model="regForm.phone" placeholder="Mobile" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white">
+                    <input type="password" x-model="regForm.password" placeholder="Password" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white">
+                    <input type="password" x-model="regForm.confirmPassword" placeholder="Confirm" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white">
+                    <button @click="register()" class="w-full bg-oba-gold hover:bg-yellow-400 text-oba-dark font-bold py-4 rounded-xl shadow-lg mt-2 transform active:scale-95 transition-all">Create Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN APP SHELL -->
+        <div x-show="currentView === 'app'" x-transition.opacity class="min-h-screen flex flex-col bg-gray-50">
+            
+            <!-- Sticky Header -->
+            <header class="absolute top-0 w-full z-30 pt-4 pb-4 px-6 flex justify-between items-center glass-dark">
+                <div class="flex flex-col">
+                    <span class="text-xs text-oba-gold uppercase tracking-wider font-semibold">Good Morning</span>
+                    <h2 class="text-white font-bold text-lg" x-text="user.name + ' ' + user.surname"></h2>
+                </div>
+                <div class="relative w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+                    <i class="fas fa-bell text-white"></i>
+                    <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-gray-900"></span>
+                </div>
+            </header>
+
+            <!-- SCROLLABLE CONTENT AREA -->
+            <main class="flex-1 pb-24 pt-20">
+
+                <!-- TAB: HOME -->
+                <div x-show="activeTab === 'home'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="px-6 space-y-6">
+                    
+                    <!-- Loyalty Card -->
+                    <div class="w-full aspect-[1.58] rounded-3xl bg-gradient-to-br from-oba-dark to-oba-light p-6 relative overflow-hidden shadow-2xl text-white transform transition-transform hover:scale-[1.01]">
+                        <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10 flex justify-between items-start">
+                            <span class="font-extrabold text-2xl tracking-tighter">OBA</span>
+                            <i class="fas fa-wifi rotate-90 opacity-50"></i>
+                        </div>
+                        <div class="relative z-10 mt-8">
+                            <span class="text-xs opacity-70 block mb-1">Cashback Balance</span>
+                            <span class="text-3xl font-bold">1.45 <span class="text-lg">₼</span></span>
+                        </div>
+                        <div class="absolute bottom-6 left-6 right-6 flex justify-between items-end z-10">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] opacity-60 uppercase tracking-widest">Card Holder</span>
+                                <span class="text-sm font-medium tracking-wide" x-text="user.name + ' ' + user.surname"></span>
+                            </div>
+                            <i class="fas fa-barcode text-4xl opacity-80"></i>
+                        </div>
+                    </div>
+
+                    <!-- Gamification Widget (50 Points) -->
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <h3 class="font-bold text-gray-800" x-text="user.rank"></h3>
+                                <p class="text-xs text-gray-500 mt-0.5">Next Rank: Silver Friend</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                                <i class="fas fa-medal"></i>
+                            </div>
+                        </div>
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <span class="text-xs font-semibold inline-block text-oba-dark" x-text="user.points + ' / 50 Points'"></span>
+                                <span class="text-xs font-semibold inline-block text-oba-dark" x-text="Math.round((user.points/50)*100) + '%'"></span>
+                            </div>
+                            <div class="overflow-hidden h-2.5 mb-1 text-xs flex rounded-full bg-gray-100">
+                                <div :style="`width: ${(user.points/50)*100}%`" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-oba-dark transition-all duration-1000 ease-out"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- My Receipts -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">My Receipts</h3>
+                            <button @click="showAllReceipts = true" class="text-xs text-oba-light font-medium">View All</button>
+                        </div>
+                        <div class="space-y-3">
+                            <template x-for="bill in receipts.slice(0, 3)" :key="bill.id">
+                                <div @click="openReceipt(bill)" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                            <i class="fas fa-receipt"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-gray-800" x-text="'Bill #' + bill.id"></p>
+                                            <p class="text-xs text-gray-500" x-text="bill.date"></p>
+                                            <p class="text-[10px] text-gray-400 mt-0.5" x-text="bill.items.length + ' Items'"></p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-bold text-oba-dark" x-text="bill.total + ' ₼'"></p>
+                                        <template x-if="bill.status === 'Unrated'">
+                                            <span class="text-[10px] bg-oba-gold/20 text-yellow-700 px-2 py-0.5 rounded-full font-medium">Rate Now</span>
+                                        </template>
+                                        <template x-if="bill.status === 'Rated'">
+                                            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Rated</span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: PRODUCTS -->
+                <div x-show="activeTab === 'products'" class="px-4 space-y-4">
+                    <div class="sticky top-0 bg-gray-50 pt-2 pb-2 z-20">
+                        <div class="relative">
+                            <input type="text" placeholder="Search products..." x-model="searchQuery" class="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-oba-light/50 text-sm">
+                            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        </div>
+                        <div class="flex space-x-2 overflow-x-auto no-scrollbar mt-3 pb-1">
+                            <template x-for="cat in categories" :key="cat">
+                                <button @click="selectedCategory = cat" 
+                                        :class="selectedCategory === cat ? 'bg-oba-dark text-white' : 'bg-white text-gray-600 border border-gray-200'"
+                                        class="px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors" x-text="cat">
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Product Grid with UPDATED IMAGES -->
+                    <div class="grid grid-cols-2 gap-3 pb-6">
+                        <template x-for="product in filteredProducts" :key="product.name">
+                            <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col h-full">
+                                <div class="relative h-28 bg-gray-100 rounded-xl mb-3 overflow-hidden">
+                                    <!-- Smart Image Logic -->
+                                    <img :src="getProductImage(product)" class="w-full h-full object-cover">
+                                    <template x-if="product.discount">
+                                        <div class="absolute top-2 left-2 bg-oba-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded" x-text="product.discount"></div>
+                                    </template>
+                                    <template x-if="product.isPL">
+                                        <div class="absolute bottom-2 right-2 bg-oba-gold text-oba-dark text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">OBA Choice</div>
+                                    </template>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-800 leading-tight mb-1" x-text="product.name"></h4>
+                                    <p class="text-[10px] text-gray-500 mb-2" x-text="product.category"></p>
+                                </div>
+                                <div class="flex items-end justify-between">
+                                    <div>
+                                        <template x-if="product.oldPrice">
+                                            <p class="text-[10px] text-gray-400 line-through" x-text="product.oldPrice"></p>
+                                        </template>
+                                        <p class="text-sm font-extrabold text-oba-dark" x-text="product.newPrice + ' ₼'"></p>
+                                    </div>
+                                    <button class="w-7 h-7 bg-oba-light rounded-full flex items-center justify-center text-white shadow-lg shadow-oba-light/30 active:scale-90 transition-transform">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- TAB: RANKS -->
+                <div x-show="activeTab === 'ranks'" class="px-6 space-y-6">
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Membership Tiers</h2>
+                        <p class="text-sm text-gray-500">Earn points to unlock better rewards.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Bronze -->
+                        <div class="bg-white rounded-2xl p-4 border-2 border-orange-100 shadow-sm relative overflow-hidden">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold text-orange-800 text-lg">Bronze Neighbor</h3>
+                                <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold">0-49 Pts</span>
+                            </div>
+                            <ul class="text-xs text-gray-600 space-y-1 mb-2">
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> Standard Cashback</li>
+                                <li><i class="fas fa-check text-green-500 mr-1"></i> Access to digital receipts</li>
+                            </ul>
+                            <template x-if="user.points < 50">
+                                <div class="w-full bg-gray-100 h-1.5 rounded-full mt-2">
+                                    <div class="bg-orange-500 h-1.5 rounded-full" :style="`width: ${(user.points/50)*100}%`"></div>
+                                </div>
+                            </template>
+                            <template x-if="user.points >= 0 && user.points < 50">
+                                <span class="absolute top-0 right-0 bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">CURRENT</span>
+                            </template>
+                        </div>
+                        <!-- Silver & Gold (Collapsed for brevity but functional) -->
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 border border-gray-300 shadow-sm relative overflow-hidden">
+                            <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-gray-700 text-lg">Silver Friend</h3><span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-bold">50-149 Pts</span></div>
+                            <ul class="text-xs text-gray-600 space-y-1 mb-2"><li><i class="fas fa-check text-green-500 mr-1"></i> <span class="font-bold">+2% Cashback</span> on OBA Products</li></ul>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-4 border border-yellow-400 shadow-md relative overflow-hidden">
+                            <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-yellow-700 text-lg">Golden Partner</h3><span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold">150+ Pts</span></div>
+                            <ul class="text-xs text-gray-600 space-y-1 mb-2"><li><i class="fas fa-check text-green-500 mr-1"></i> <span class="font-bold">+5% Cashback</span> on Everything</li></ul>
+                        </div>
+                    </div>
+
+                    <!-- Milestones Path -->
+                    <h3 class="font-bold text-gray-800 mt-6">Your Journey</h3>
+                    <div class="relative pl-4 border-l-2 border-gray-200 space-y-8 ml-3">
+                        <div class="relative">
+                            <div class="absolute -left-[23px] w-4 h-4 rounded-full border-2 border-white shadow-sm" :class="user.points >= 30 ? 'bg-green-500' : 'bg-gray-300'"></div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100" :class="{'opacity-50': user.points < 30}">
+                                <div class="flex justify-between items-start">
+                                    <div><span class="text-xs font-bold text-oba-light uppercase">30 Points</span><h4 class="font-bold text-gray-800">Free OBA Makaron</h4></div>
+                                    <div class="w-10 h-10 bg-oba-gold/20 rounded-lg flex items-center justify-center text-oba-dark"><i class="fas fa-box-open"></i></div>
+                                </div>
+                                <div class="mt-2 text-xs font-semibold" :class="user.points >= 30 ? 'text-green-600' : 'text-gray-400'"><span x-text="user.points >= 30 ? 'Unlocked - Claim at Register' : 'Locked'"></span></div>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute -left-[23px] w-4 h-4 rounded-full border-2 border-white shadow-sm" :class="user.points >= 50 ? 'bg-green-500' : 'bg-gray-300'"></div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100" :class="{'opacity-50': user.points < 50}">
+                                <div class="flex justify-between items-start">
+                                    <div><span class="text-xs font-bold text-oba-light uppercase">50 Points</span><h4 class="font-bold text-gray-800">5% Off Coupon</h4></div>
+                                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600"><i class="fas fa-ticket-alt"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute -left-[23px] w-4 h-4 rounded-full border-2 border-white shadow-sm" :class="user.points >= 80 ? 'bg-green-500' : 'bg-gray-300'"></div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100" :class="{'opacity-50': user.points < 80}">
+                                <div class="flex justify-between items-start">
+                                    <div><span class="text-xs font-bold text-oba-light uppercase">80 Points</span><h4 class="font-bold text-gray-800">"Qonşu Payı" Box</h4></div>
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600"><i class="fas fa-gift"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SETTINGS -->
+                <div x-show="activeTab === 'settings'" class="px-6 space-y-4">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-4">Profile</h3>
+                        <div class="space-y-3">
+                            <input type="text" x-model="user.name" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                            <input type="text" x-model="user.surname" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <button @click="logout()" class="w-full bg-red-50 text-red-500 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors">Log Out</button>
+                </div>
+
+            </main>
+
+            <!-- NAVIGATION BAR -->
+            <nav class="absolute bottom-0 w-full bg-white border-t border-gray-200 px-6 py-3 pb-6 z-30 flex justify-between items-center">
+                <button @click="activeTab = 'home'" :class="activeTab === 'home' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-home text-xl"></i><span class="text-[10px] font-medium">Home</span></button>
+                <button @click="activeTab = 'products'" :class="activeTab === 'products' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-store text-xl"></i><span class="text-[10px] font-medium">Shop</span></button>
+                <div class="w-12"></div>
+                <button @click="activeTab = 'ranks'" :class="activeTab === 'ranks' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-chart-line text-xl"></i><span class="text-[10px] font-medium">Ranks</span></button>
+                <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-cog text-xl"></i><span class="text-[10px] font-medium">Config</span></button>
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2"><button class="w-14 h-14 bg-oba-dark rounded-full flex items-center justify-center text-oba-gold shadow-lg shadow-oba-dark/40 border-4 border-gray-50"><i class="fas fa-qrcode text-2xl"></i></button></div>
+            </nav>
+        </div>
+
+        <!-- "VIEW ALL" RECEIPTS OVERLAY -->
+        <div x-show="showAllReceipts" x-transition.opacity class="absolute inset-0 z-50 bg-gray-900/90 flex flex-col items-center pt-8 pb-4 px-4 overflow-y-auto">
+            <button @click="showAllReceipts = false" class="absolute top-4 right-4 text-white text-2xl z-50"><i class="fas fa-times"></i></button>
+            <div class="w-full max-w-sm space-y-6 pb-10">
+                <template x-for="receipt in receipts" :key="receipt.id">
+                    <div class="w-full shadow-2xl rounded-2xl overflow-hidden relative">
+                        <div class="bg-oba-receipt p-6 text-center text-white relative">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 text-oba-dark font-bold text-xs tracking-tighter">OBA</div>
+                            <h2 class="text-lg font-bold">Electronic Receipt</h2>
+                            <p class="text-xs text-gray-300 opacity-80">Thank you for shopping!</p>
+                        </div>
+                        <div class="bg-white p-6 pb-2">
+                            <div class="flex justify-between text-xs text-gray-500 font-medium mb-4 pb-4 border-b border-gray-200 border-dashed">
+                                <span x-text="'Date: ' + receipt.date"></span><span x-text="'Time: ' + (receipt.time || '12:00')"></span>
+                            </div>
+                            <div class="space-y-3 mb-4">
+                                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">ITEMS</p>
+                                <template x-for="item in receipt.items" :key="item.name">
+                                    <div class="flex justify-between items-start text-sm">
+                                        <div class="flex text-gray-600"><span class="w-6 opacity-50" x-text="(item.qty || 1) + 'x'"></span><span x-text="item.name"></span></div>
+                                        <span class="font-medium text-gray-800 whitespace-nowrap" x-text="( (item.qty || 1) * parseFloat(item.price || 0) ).toFixed(2) + ' ₼'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t border-gray-200 border-dashed pt-3 space-y-1 mb-4">
+                                <div class="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span x-text="receipt.subtotal ? receipt.subtotal + ' ₼' : receipt.total + ' ₼'"></span></div>
+                                <template x-if="receipt.savings"><div class="flex justify-between text-sm text-green-600"><span>Savings</span><span x-text="receipt.savings + ' ₼'"></span></div></template>
+                                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100"><span class="font-bold text-xl text-gray-900">Total</span><span class="font-bold text-xl text-gray-900" x-text="receipt.total + ' ₼'"></span></div>
+                            </div>
+                            <div class="py-2 text-center"><i class="fas fa-barcode text-6xl text-gray-700 opacity-70"></i><p class="text-[10px] text-gray-400 mt-1" x-text="'#' + receipt.id"></p></div>
+                        </div>
+                        <div class="bg-white"><div class="receipt-scallop"></div></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- SLIDE-UP RECEIPT MODAL -->
+        <div x-show="selectedReceipt" class="absolute inset-0 z-50 flex items-end">
+            <div @click="selectedReceipt = null" x-show="selectedReceipt" x-transition.opacity class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+            <div x-show="selectedReceipt" x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0" class="w-full bg-gray-50 rounded-t-[2rem] h-[85%] relative flex flex-col shadow-2xl overflow-hidden">
+                <div class="w-full flex justify-center pt-3 pb-1" @click="selectedReceipt = null"><div class="w-12 h-1.5 bg-gray-300 rounded-full"></div></div>
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                    <div><h3 class="text-xl font-bold text-gray-800" x-text="selectedReceipt ? 'Bill #' + selectedReceipt.id : ''"></h3><p class="text-xs text-gray-500">Rate products to earn points</p></div>
+                    <button @click="selectedReceipt = null" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <template x-if="selectedReceipt">
+                        <template x-for="(item, index) in selectedReceipt.items" :key="index">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-lg"><i class="fas fa-box-open"></i></div><div><h4 class="font-bold text-gray-800 text-sm" x-text="item.name"></h4><p class="text-xs text-gray-500">Purchased</p></div></div>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-2 flex justify-between items-center">
+                                    <template x-if="!item.rated"><div class="flex space-x-1"><template x-for="star in 5"><button @click="rateItem(item, star)" class="text-gray-300 hover:text-oba-gold transition-colors text-xl"><i class="fas fa-star"></i></button></template></div></template>
+                                    <template x-if="item.rated"><span class="text-xs font-bold text-green-600 flex items-center"><i class="fas fa-check-circle mr-1"></i> Rated</span></template>
+                                    <span class="text-[10px] font-medium text-gray-400">Rate & Earn +1</span>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEEDBACK MODAL -->
+        <div x-show="feedbackModalOpen" class="absolute inset-0 z-[60] flex items-center justify-center px-6">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+            <div class="bg-white w-full rounded-2xl p-6 relative z-10 shadow-2xl animate-slide-up">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">We value your feedback</h3>
+                <p class="text-sm text-gray-500 mb-4">Why the low rating for <span class="font-bold text-oba-dark" x-text="selectedRatingItem?.name"></span>?</p>
+                <div class="space-y-2 mb-4">
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50"><input type="radio" name="reason" class="text-oba-dark focus:ring-oba-dark"><span class="text-sm text-gray-700">Poor quality / Defective</span></label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50"><input type="radio" name="reason" class="text-oba-dark focus:ring-oba-dark"><span class="text-sm text-gray-700">Price too high</span></label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50"><input type="radio" name="reason" class="text-oba-dark focus:ring-oba-dark"><span class="text-sm text-gray-700">Other</span></label>
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="feedbackModalOpen = false" class="flex-1 py-3 text-gray-500 font-semibold text-sm">Cancel</button>
+                    <button @click="submitFeedback()" class="flex-1 bg-oba-dark text-white py-3 rounded-xl font-bold text-sm shadow-lg">Submit & Earn</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CELEBRATION OVERLAY -->
+        <div x-show="showCelebration" class="absolute inset-0 z-[70] bg-oba-dark/95 flex flex-col items-center justify-center text-center px-8" x-transition.opacity>
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <div class="confetti" style="left: 10%; animation-delay: 0s;"></div><div class="confetti" style="left: 30%; animation-delay: 1.5s; background-color: white;"></div><div class="confetti" style="left: 50%; animation-delay: 0.5s;"></div><div class="confetti" style="left: 70%; animation-delay: 2s; background-color: #EF4444;"></div><div class="confetti" style="left: 90%; animation-delay: 1s;"></div>
+            </div>
+            <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 animate-bounce-short shadow-[0_0_40px_rgba(255,255,255,0.3)]"><i class="fas fa-box-open text-4xl text-oba-dark"></i></div>
+            <h2 class="text-3xl font-extrabold text-white mb-2">MILESTONE UNLOCKED!</h2>
+            <p class="text-oba-gold text-lg font-bold mb-6">Free OBA Makaron</p>
+            <p class="text-gray-300 text-sm mb-8">You've reached 30 points! Show this screen at the cashier to claim your reward.</p>
+            <button @click="claimReward()" class="w-full bg-oba-gold text-black font-extrabold py-4 rounded-2xl shadow-xl hover:scale-105 transition-transform">CLAIM NOW</button>
+        </div>
+
+        <!-- TOAST -->
+        <div x-show="toast.visible" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-full opacity-0" x-transition:enter-end="translate-y-0 opacity-100" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-3 z-[60] w-max max-w-[90%]">
+            <i :class="toast.type === 'error' ? 'fa-exclamation-circle text-red-400' : 'fa-check-circle text-green-400'" class="fas"></i><span class="text-sm font-medium" x-text="toast.message"></span>
+        </div>
+
+    </div>
+</body>
+</html>
