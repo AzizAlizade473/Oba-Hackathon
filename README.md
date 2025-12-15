@@ -71,9 +71,9 @@ This prototype is built as a **High-Fidelity Mobile Simulation** using a lightwe
 
 
 
-(<img width="382" height="728" alt="image" src="https://github.com/user-attachments/assets/1476f842-00b3-42e8-ae07-61f62a6554d3" />) 
-<img width="375" height="719" alt="image" src="https://github.com/user-attachments/assets/55fbfc9b-ae34-409e-a1db-8ecd9af587c3" />
-(<img width="382" height="743" alt="image" src="https://github.com/user-attachments/assets/efe93e2e-b011-42f5-9088-e545fab3319b" />)
+<img width="300" height="700" alt="image" src="https://github.com/user-attachments/assets/1476f842-00b3-42e8-ae07-61f62a6554d3" />
+<img width="300" height="700" alt="image" src="https://github.com/user-attachments/assets/55fbfc9b-ae34-409e-a1db-8ecd9af587c3" />
+<img width="300" height="700" alt="image" src="https://github.com/user-attachments/assets/efe93e2e-b011-42f5-9088-e545fab3319b" />
 
 ---
 
