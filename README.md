@@ -69,12 +69,11 @@ This prototype is built as a **High-Fidelity Mobile Simulation** using a lightwe
 
 
 
-| Home Dashboard | Rating Modal | Gamification |
-| :---: | :---: | :---: |
-| ![Home](<img width="382" height="728" alt="image" src="https://github.com/user-attachments/assets/1476f842-00b3-42e8-ae07-61f62a6554d3" />
-) | ![Rating](<img width="360" height="698" alt="image" src="https://github.com/user-attachments/assets/a48a9ac7-3f18-4bb9-92c7-af9f9c27738d" />
-) | ![Rank](<img width="382" height="743" alt="image" src="https://github.com/user-attachments/assets/efe93e2e-b011-42f5-9088-e545fab3319b" />
-) |
+
+
+(<img width="382" height="728" alt="image" src="https://github.com/user-attachments/assets/1476f842-00b3-42e8-ae07-61f62a6554d3" />) | ![Rating](<img width="360" height="698" alt="image       src="https://github.com/user-attachments/assets/a48a9ac7-3f18-4bb9-92c7-af9f9c27738d" />
+) (<img width="382" height="743" alt="image" src="https://github.com/user-attachments/assets/efe93e2e-b011-42f5-9088-e545fab3319b" />
+)
 
 ---
 
