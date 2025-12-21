@@ -80,6 +80,7 @@
                 selectedReceipt: null,
                 feedbackModalOpen: false,
                 selectedRatingItem: null,
+                selectedRatingValue: 0, // Temp storage for stars during feedback
                 showCelebration: false,
                 toast: { visible: false, message: '', type: 'success' },
 
@@ -95,7 +96,6 @@
                     { name: 'Shah Qara Çay 400g', category: 'Drinks', oldPrice: '10.50', newPrice: '6.99', discount: '-33%' },
                     { name: 'Ariel Yuyucu Toz 5kg', category: 'Cleaning', oldPrice: '39.39', newPrice: '15.99', discount: '-59%' },
                     { name: 'Elidor Şampun 400ml', category: 'Hygiene', oldPrice: '7.99', newPrice: '4.99', discount: '-37%' },
-
                     // --- PAGE 3: MEATS ---
                     { name: 'Tamdad Sosis Tavada 1kg', category: 'Meats', oldPrice: '13.99', newPrice: '7.99', discount: '-42%' },
                     { name: 'Soyulmuş Şabalıd 250g', category: 'Grocery', oldPrice: '5.75', newPrice: '4.99', discount: '-13%' },
@@ -105,7 +105,6 @@
                     { name: 'Nəfis Dad Servelat 1kg', category: 'Meats', oldPrice: '9.89', newPrice: '6.99', discount: '-29%' },
                     { name: 'Sədəf Izqara Sosis 1kg', category: 'Meats', oldPrice: '12.99', newPrice: '6.99', discount: '-46%' },
                     { name: 'Nəfis Dad Sosis 1kg', category: 'Meats', oldPrice: '5.89', newPrice: '4.69', discount: '-20%' },
-
                     // --- PAGE 4: DAIRY (SOUR CREAM/CHEESE) ---
                     { name: 'Romaşka Xama 25% 180g', category: 'Dairy', oldPrice: '3.39', newPrice: '2.99', discount: '-11%' },
                     { name: 'Kalleh Qaymaq 200g', category: 'Dairy', oldPrice: '1.39', newPrice: '0.99', discount: '-28%' },
@@ -114,7 +113,6 @@
                     { name: 'Willie Pendir 100g', category: 'Dairy', oldPrice: '1.49', newPrice: '1.19', discount: '-20%' },
                     { name: 'Atena Ağ Pendir 1kg', category: 'Dairy', oldPrice: '8.99', newPrice: '7.00', discount: '-22%' },
                     { name: 'Hər Gün Favorit Pendir 250g', category: 'Dairy', oldPrice: '3.29', newPrice: '2.85', discount: '-13%' },
-
                     // --- PAGE 5: BUTTER & OILS ---
                     { name: 'Vanak Kərə Yağı 1kg', category: 'Dairy', oldPrice: '18.99', newPrice: '12.99', discount: '-31%' },
                     { name: 'Derevenskiye Spred Yağ 180g', category: 'Dairy', oldPrice: '1.79', newPrice: '1.09', discount: '-39%' },
@@ -123,7 +121,6 @@
                     { name: 'Hər Gün Kərə Yağı 180g', category: 'Dairy', oldPrice: '4.59', newPrice: '3.49', discount: '-24%' },
                     { name: 'Lara Kərə Yağı 1kg', category: 'Dairy', oldPrice: '19.99', newPrice: '12.99', discount: '-35%' },
                     { name: 'Atena Süd 1L', category: 'Dairy', oldPrice: '2.39', newPrice: '2.05', discount: '-14%' },
-
                     // --- PAGE 6: YOGURTS ---
                     { name: 'Hər Gün Şor 350g', category: 'Dairy', oldPrice: '1.99', newPrice: '1.78', discount: '-10%' },
                     { name: 'Atena Süd 3.2% 1L', category: 'Dairy', oldPrice: '2.65', newPrice: '2.25', discount: '-15%' },
@@ -131,7 +128,6 @@
                     { name: 'Atena Qatıq 3.6% 500g', category: 'Dairy', oldPrice: '1.99', newPrice: '1.65', discount: '-17%' },
                     { name: 'Milla Kəsmik 180g', category: 'Dairy', oldPrice: '2.29', newPrice: '1.99', discount: '-13%' },
                     { name: 'Alpena Yoqurt 90g', category: 'Dairy', oldPrice: '0.50', newPrice: '0.45', discount: '-10%' },
-
                     // --- PAGE 7: OILS & DRINKS ---
                     { name: 'Verde Zeytun Yağı 750ml', category: 'Grocery', oldPrice: '13.49', newPrice: '7.99', discount: '-40%' },
                     { name: 'Danone Yoqurt 100g', category: 'Dairy', oldPrice: '0.55', newPrice: '0.45', discount: '-18%' },
@@ -139,7 +135,6 @@
                     { name: 'Maslava Günəbaxan Yağı 870ml', category: 'Grocery', oldPrice: '3.69', newPrice: '2.99', discount: '-19%' },
                     { name: 'Zateya Günəbaxan Yağı 1.8L', category: 'Grocery', oldPrice: '8.95', newPrice: '6.99', discount: '-21%' },
                     { name: 'Safran Qarğıdalı Yağı 1L', category: 'Grocery', oldPrice: '6.49', newPrice: '5.49', discount: '-15%' },
-
                     // --- PAGE 8: GRAINS & PASTA ---
                     { name: 'Alemshah Basmati Düyü 1.7kg', category: 'Grocery', oldPrice: '8.99', newPrice: '6.99', discount: '-22%' },
                     { name: 'Qarğıdalı Dənələri 650g', category: 'Grocery', oldPrice: '1.75', newPrice: '1.55', discount: '-11%' },
@@ -147,7 +142,6 @@
                     { name: 'Sultan Basmati Düyü 2kg', category: 'Grocery', oldPrice: '9.05', newPrice: '8.14', discount: '-10%' },
                     { name: 'Ankara Makaron 500g', category: 'Grocery', oldPrice: '1.90', newPrice: '1.49', discount: '-21%' },
                     { name: 'Sabella Makaron 500g', category: 'Grocery', oldPrice: '1.19', newPrice: '0.89', discount: '-25%' },
-
                     // --- PAGE 9: CANNED ---
                     { name: 'Deniz Ton Balığı 180g', category: 'Grocery', oldPrice: '4.89', newPrice: '3.59', discount: '-26%' },
                     { name: 'Tanelli Makaron 1kg', category: 'Grocery', oldPrice: '1.45', newPrice: '1.09', discount: '-24%' },
@@ -156,7 +150,6 @@
                     { name: 'Mal Əti Konservi 500g', category: 'Grocery', oldPrice: '5.89', newPrice: '4.39', discount: '-25%' },
                     { name: 'Tada Ton Balığı 160g', category: 'Grocery', oldPrice: '3.85', newPrice: '2.79', discount: '-27%' },
                     { name: 'Kilka Tomatda 240g', category: 'Grocery', oldPrice: '2.55', newPrice: '1.79', discount: '-29%' },
-
                     // --- PAGE 10: SAUCES ---
                     { name: 'Merma Mayonez 192ml', category: 'Grocery', oldPrice: '1.99', newPrice: '1.69', discount: '-15%' },
                     { name: 'Astoria Ketçup 200g', category: 'Grocery', oldPrice: '1.29', newPrice: '0.99', discount: '-23%' },
@@ -165,7 +158,6 @@
                     { name: 'Bizim Tarla Pomidor 660g', category: 'Grocery', oldPrice: '2.85', newPrice: '2.49', discount: '-12%' },
                     { name: 'Evden Acı Bibər 720g', category: 'Grocery', oldPrice: '5.49', newPrice: '4.39', discount: '-20%' },
                     { name: 'Safran Pomidor Turşusu', category: 'Grocery', oldPrice: '2.59', newPrice: '1.89', discount: '-27%' },
-
                     // --- PAGE 11: PICKLES & HONEY ---
                     { name: 'Safran Xiyar Turşusu 1.5kg', category: 'Grocery', oldPrice: '3.79', newPrice: '2.95', discount: '-22%' },
                     { name: 'Safran Pomidor Turşusu 720g', category: 'Grocery', oldPrice: '2.09', newPrice: '1.69', discount: '-19%' },
@@ -174,7 +166,6 @@
                     { name: 'Gədəbəy Bal 250g', category: 'Grocery', oldPrice: '2.79', newPrice: '2.49', discount: '-10%' },
                     { name: 'Nescafe Gold Qəhvə 47g', category: 'Drinks', oldPrice: '7.99', newPrice: '6.59', discount: '-17%' },
                     { name: 'Nescafe Classic 47g', category: 'Drinks', oldPrice: '5.49', newPrice: '4.19', discount: '-23%' },
-
                     // --- PAGE 12: TEA & COFFEE ---
                     { name: 'Nescafe Gold Qəhvə 190g', category: 'Drinks', oldPrice: '22.49', newPrice: '12.99', discount: '-42%' },
                     { name: 'Pan Coffee Cappuccino', category: 'Drinks', oldPrice: '0.59', newPrice: '0.49', discount: '-16%' },
@@ -184,7 +175,6 @@
                     { name: 'Shah Gold Çay 2g', category: 'Drinks', oldPrice: '1.99', newPrice: '1.35', discount: '-32%' },
                     { name: 'Mouslum Qara Çay 200g', category: 'Drinks', oldPrice: '5.69', newPrice: '4.59', discount: '-19%' },
                     { name: 'Hekaya Buket Çay 200g', category: 'Drinks', oldPrice: '5.29', newPrice: '3.59', discount: '-32%' },
-
                     // --- PAGE 13: TEA & CHIPS ---
                     { name: 'Azerçay Buket 225g', category: 'Drinks', oldPrice: '6.95', newPrice: '5.99', discount: '-13%' },
                     { name: 'Champion Pekoe Çay 250g', category: 'Drinks', oldPrice: '7.60', newPrice: '6.19', discount: '-18%' },
@@ -194,7 +184,6 @@
                     { name: 'Doritos Çipsi 130g', category: 'Sweets', oldPrice: '3.49', newPrice: '2.59', discount: '-25%' },
                     { name: 'Chipsim 140g', category: 'Sweets', oldPrice: '2.79', newPrice: '2.29', discount: '-17%' },
                     { name: 'Beloçka Tumu 70g', category: 'Sweets', oldPrice: '0.70', newPrice: '0.55', discount: '-21%' },
-
                     // --- PAGE 14: SNACKS ---
                     { name: 'Çiko Qara Tum 100g', category: 'Sweets', oldPrice: '1.40', newPrice: '1.09', discount: '-22%' },
                     { name: 'Beloçka Dakota Tum 100g', category: 'Sweets', oldPrice: '1.40', newPrice: '0.99', discount: '-29%' },
@@ -203,7 +192,6 @@
                     { name: 'Trend Qarğıdalı Çubuğu', category: 'Sweets', oldPrice: '1.39', newPrice: '0.99', discount: '-28%' },
                     { name: 'Maredo Qara Üzüm 250g', category: 'Sweets', oldPrice: '4.69', newPrice: '3.99', discount: '-15%' },
                     { name: 'Safran Kakao 25g', category: 'Grocery', oldPrice: '1.10', newPrice: '0.99', discount: '-10%' },
-
                     // --- PAGE 15: BREAKFAST ---
                     { name: 'Nestle Şokoladlı Səhər', category: 'Sweets', oldPrice: '3.19', newPrice: '2.29', discount: '-28%' },
                     { name: 'Pakmaya Xəmir Mayası', category: 'Grocery', oldPrice: '0.91', newPrice: '0.75', discount: '-17%' },
@@ -211,7 +199,6 @@
                     { name: 'Snegiri Yulaf Lopaları', category: 'Grocery', oldPrice: '2.19', newPrice: '1.95', discount: '-10%' },
                     { name: 'Azərşəkər Kəllə Qənd', category: 'Grocery', oldPrice: '11.65', newPrice: '10.49', discount: '-10%' },
                     { name: 'Parkur Şokolad', category: 'Sweets', oldPrice: '8.99', newPrice: '7.59', discount: '-15%' },
-
                     // --- PAGE 16: CHOCOLATES ---
                     { name: 'Kit Kat Mini 1kg', category: 'Sweets', oldPrice: '34.99', newPrice: '25.99', discount: '-25%' },
                     { name: 'Nevskiy Şokolad 1kg', category: 'Sweets', oldPrice: '10.99', newPrice: '8.99', discount: '-18%' },
@@ -220,7 +207,6 @@
                     { name: 'Aidin Snowpy', category: 'Sweets', oldPrice: '9.99', newPrice: '7.99', discount: '-20%' },
                     { name: 'Maredo Milk Like Konfet', category: 'Sweets', oldPrice: '9.39', newPrice: '6.99', discount: '-25%' },
                     { name: 'Maredo Crunch Vafli', category: 'Sweets', oldPrice: '12.99', newPrice: '9.99', discount: '-23%' },
-
                     // --- PAGE 22: CHOCOLATE BARS ---
                     { name: 'Alpen Gold Şokolad', category: 'Sweets', oldPrice: '4.20', newPrice: '2.29', discount: '-45%' },
                     { name: 'Kit Kat Şokolad', category: 'Sweets', oldPrice: '1.99', newPrice: '1.45', discount: '-27%' },
@@ -228,7 +214,6 @@
                     { name: 'Nestle Şokolad', category: 'Sweets', oldPrice: '3.39', newPrice: '1.99', discount: '-41%' },
                     { name: 'Çudo Vkusa Şokolad', category: 'Sweets', oldPrice: '1.99', newPrice: '1.59', discount: '-20%' },
                     { name: 'Boool Şokolad Kremi', category: 'Sweets', oldPrice: '3.99', newPrice: '3.39', discount: '-15%' },
-
                     // --- PAGE 23: WATER & JUICE ---
                     { name: 'Moy Meyvə Şirəsi 950ml', category: 'Drinks', oldPrice: '1.95', newPrice: '1.59', discount: '-18%' },
                     { name: 'Nabeglavi Mineral Su', category: 'Drinks', oldPrice: '1.35', newPrice: '1.15', discount: '-14%' },
@@ -237,7 +222,6 @@
                     { name: 'Hər Gün Qazsız Su 5L', category: 'Drinks', oldPrice: '1.49', newPrice: '1.19', discount: '-20%' },
                     { name: 'Slavyanka Qazsız Su 1L', category: 'Drinks', oldPrice: '0.84', newPrice: '0.69', discount: '-17%' },
                     { name: 'Natura Meyvə Şirəsi', category: 'Drinks', oldPrice: '0.60', newPrice: '0.50', discount: '-16%' },
-
                     // --- PAGE 24: SODA ---
                     { name: 'Pepsi Qazlı İçki 1L', category: 'Drinks', oldPrice: '1.39', newPrice: '1.15', discount: '-17%' },
                     { name: 'Moy Meyvə Şirəsi 2L', category: 'Drinks', oldPrice: '3.75', newPrice: '3.35', discount: '-10%' },
@@ -246,7 +230,6 @@
                     { name: 'Gülüstan Qazlı İçki', category: 'Drinks', oldPrice: '1.20', newPrice: '0.99', discount: '-17%' },
                     { name: 'Trend Qazlı İçki', category: 'Drinks', oldPrice: '0.65', newPrice: '0.49', discount: '-24%' },
                     { name: 'Trend Ice Tea', category: 'Drinks', oldPrice: '1.00', newPrice: '0.79', discount: '-21%' },
-
                     // --- PAGE 27: HYGIENE ---
                     { name: 'Aura Mətbəx Salfeti', category: 'Cleaning', oldPrice: '4.72', newPrice: '2.79', discount: '-40%' },
                     { name: 'Papia Tualet Kağızı 4pc', category: 'Hygiene', oldPrice: '4.59', newPrice: '2.49', discount: '-45%' },
@@ -255,7 +238,6 @@
                     { name: 'Klar Yuyucu Toz 1.35kg', category: 'Cleaning', oldPrice: '3.45', newPrice: '2.49', discount: '-27%' },
                     { name: 'ABC Yuyucu Toz 1.5kg', category: 'Cleaning', oldPrice: '5.65', newPrice: '4.99', discount: '-11%' },
                     { name: 'Alafran Yuyucu Toz 9kg', category: 'Cleaning', oldPrice: '17.99', newPrice: '11.99', discount: '-33%' },
-
                     // --- PAGE 28: CLEANING ---
                     { name: 'Bingo Yuyucu Toz 6kg', category: 'Cleaning', oldPrice: '19.99', newPrice: '11.99', discount: '-40%' },
                     { name: 'ABC Yuyucu Vasitə', category: 'Cleaning', oldPrice: '7.45', newPrice: '5.99', discount: '-19%' },
@@ -263,7 +245,6 @@
                     { name: 'Çistin Qabyuyan', category: 'Cleaning', oldPrice: '1.79', newPrice: '1.19', discount: '-33%' },
                     { name: 'Klar Ağardıcı 2.5L', category: 'Cleaning', oldPrice: '2.79', newPrice: '1.99', discount: '-28%' },
                     { name: 'Huggies Uşaq Bezi', category: 'Hygiene', oldPrice: '4.39', newPrice: '2.99', discount: '-31%' },
-
                     // --- PAGE 29: HYGIENE II ---
                     { name: 'Lovbe Qabyuyan Maye', category: 'Cleaning', oldPrice: '2.50', newPrice: '1.29', discount: '-48%' },
                     { name: 'Predo Uşaq Bezi', category: 'Hygiene', oldPrice: '18.90', newPrice: '12.99', discount: '-31%' },
@@ -271,7 +252,6 @@
                     { name: 'Colgate Diş Məcunu', category: 'Hygiene', oldPrice: '3.09', newPrice: '2.49', discount: '-19%' },
                     { name: 'Libresse Qadın Bezi', category: 'Hygiene', oldPrice: '3.49', newPrice: '1.99', discount: '-43%' },
                     { name: 'Molped Qadın Bezi', category: 'Hygiene', oldPrice: '6.32', newPrice: '3.59', discount: '-43%' },
-
                     // --- PAGE 30: SOAP ---
                     { name: 'Kotex Ultra Qadın Bezi', category: 'Hygiene', oldPrice: '4.09', newPrice: '1.99', discount: '-51%' },
                     { name: 'Diana Sabun 5pc', category: 'Hygiene', oldPrice: '2.59', newPrice: '1.99', discount: '-23%' },
@@ -280,7 +260,6 @@
                     { name: 'Sədəf Təsərrüfat Sabunu', category: 'Cleaning', oldPrice: '0.85', newPrice: '0.59', discount: '-30%' },
                     { name: 'Duru Duş Geli 450ml', category: 'Hygiene', oldPrice: '6.39', newPrice: '4.49', discount: '-29%' },
                     { name: 'Fax Dezodorant', category: 'Hygiene', oldPrice: '3.99', newPrice: '2.99', discount: '-25%' },
-
                     // --- PAGE 33: CHECKOUT SPECIALS ---
                     { name: 'Patron Günəbaxan Tumu', category: 'Sweets', oldPrice: '1.40', newPrice: '1.09', discount: '-22%' },
                     { name: 'Çudo Vkusa Vafli', category: 'Sweets', oldPrice: '2.19', newPrice: '1.65', discount: '-24%' },
@@ -292,10 +271,10 @@
                     { 
                         id: 4890, date: '08 Dec', time: '14:15', total: '8.90', subtotal: '9.10', savings: '-0.20', status: 'Rated',
                         items: [
-                            { name: 'Magnum Ice Cream', qty: 2, price: '5.00', rated: true },
-                            { name: 'OBA Wet Wipes', qty: 1, price: '1.50', rated: true },
-                            { name: 'Gum', qty: 2, price: '1.40', rated: true },
-                            { name: 'Water 0.5L', qty: 2, price: '1.00', rated: true }
+                            { name: 'Magnum Ice Cream', qty: 2, price: '5.00', rated: true, userRating: 5 },
+                            { name: 'OBA Wet Wipes', qty: 1, price: '1.50', rated: true, userRating: 5 },
+                            { name: 'Gum', qty: 2, price: '1.40', rated: true, userRating: 4 },
+                            { name: 'Water 0.5L', qty: 2, price: '1.00', rated: true, userRating: 5 }
                         ]
                     },
                     { 
@@ -314,6 +293,29 @@
                             { name: 'Pepsi 1L', qty: 2, price: '1.15', rated: false }, 
                             { name: 'KitKat Mini', qty: 1, price: '25.99', rated: false }, 
                             { name: 'OBA PL Wafers', qty: 2, price: '0.89', rated: false }
+                        ] 
+                    },
+                    { 
+                        id: 1003, date: '10 Dec', time: '11:45', total: '12.50', subtotal: '15.00', savings: '-2.50', status: 'Rated', 
+                        items: [
+                            { name: 'Nescafe Gold Qəhvə 47g', qty: 1, price: '6.59', rated: true, userRating: 4 },
+                            { name: 'Bismak Un 1kg', qty: 2, price: '1.39', rated: true, userRating: 3 },
+                            { name: 'Gədəbəy Bal 250g', qty: 1, price: '2.49', rated: true, userRating: 5 }
+                        ] 
+                    },
+                    { 
+                        id: 1004, date: '12 Dec', time: '16:20', total: '4.85', subtotal: '5.20', savings: '-0.35', status: 'Unrated', 
+                        items: [
+                            { name: 'Doritos Çipsi 130g', qty: 1, price: '2.59', rated: false },
+                            { name: 'Trend Ice Tea', qty: 2, price: '0.79', rated: false }
+                        ] 
+                    },
+                    { 
+                        id: 1005, date: '14 Dec', time: '20:10', total: '22.99', subtotal: '24.50', savings: '-1.51', status: 'Unrated', 
+                        items: [
+                            { name: 'Ariel Yuyucu Toz 5kg', qty: 1, price: '15.99', rated: false },
+                            { name: 'Domestos 750ml', qty: 1, price: '2.99', rated: false },
+                            { name: 'Sun Salfet 80pc', qty: 3, price: '0.89', rated: false }
                         ] 
                     }
                 ],
@@ -409,8 +411,10 @@
                         return this.showToast('Daily limit reached (3/3). Come back tomorrow!', 'error');
                     }
                     this.selectedRatingItem = item; 
+                    this.selectedRatingValue = stars; // STORE STARS
+
                     if (stars >= 3) {
-                        this.finalizeRating(item);
+                        this.finalizeRating(item, stars);
                         this.showToast('+1 Point Added!', 'success');
                     } else {
                         this.feedbackModalOpen = true;
@@ -419,12 +423,13 @@
 
                 submitFeedback() {
                     this.feedbackModalOpen = false;
-                    this.finalizeRating(this.selectedRatingItem);
+                    this.finalizeRating(this.selectedRatingItem, this.selectedRatingValue);
                     this.showToast('Feedback received. +1 Point Added!', 'success');
                 },
 
-                finalizeRating(item) {
+                finalizeRating(item, stars) {
                     item.rated = true;
+                    item.userRating = stars; // SAVE RATING TO ITEM
                     this.ratingSessionCount++;
                     this.addPoint();
                     if (this.selectedReceipt.items.every(i => i.rated)) {
@@ -624,7 +629,8 @@
                             <button @click="showAllReceipts = true" class="text-xs text-oba-light font-medium">View All</button>
                         </div>
                         <div class="space-y-3">
-                            <template x-for="bill in receipts.slice(0, 3)" :key="bill.id">
+                            <!-- Show up to 4 bills on home screen -->
+                            <template x-for="bill in receipts.slice(0, 4)" :key="bill.id">
                                 <div @click="openReceipt(bill)" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform">
                                     <div class="flex items-center space-x-4">
                                         <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
@@ -818,7 +824,20 @@
                                 <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">ITEMS</p>
                                 <template x-for="item in receipt.items" :key="item.name">
                                     <div class="flex justify-between items-start text-sm">
-                                        <div class="flex text-gray-600"><span class="w-6 opacity-50" x-text="(item.qty || 1) + 'x'"></span><span x-text="item.name"></span></div>
+                                        <div class="flex flex-col">
+                                            <div class="flex text-gray-600">
+                                                <span class="w-6 opacity-50" x-text="(item.qty || 1) + 'x'"></span>
+                                                <span x-text="item.name"></span>
+                                            </div>
+                                            <!-- DYNAMIC HISTORY RATING STAR DISPLAY -->
+                                            <template x-if="item.rated">
+                                                <div class="flex text-oba-gold text-[10px] ml-6 mt-0.5">
+                                                    <template x-for="s in item.userRating">
+                                                        <i class="fas fa-star"></i>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
                                         <span class="font-medium text-gray-800 whitespace-nowrap" x-text="( (item.qty || 1) * parseFloat(item.price || 0) ).toFixed(2) + ' ₼'"></span>
                                     </div>
                                 </template>
@@ -854,8 +873,18 @@
                                 </div>
                                 <div class="bg-gray-50 rounded-lg p-2 flex justify-between items-center">
                                     <template x-if="!item.rated"><div class="flex space-x-1"><template x-for="star in 5"><button @click="rateItem(item, star)" class="text-gray-300 hover:text-oba-gold transition-colors text-xl"><i class="fas fa-star"></i></button></template></div></template>
-                                    <template x-if="item.rated"><span class="text-xs font-bold text-green-600 flex items-center"><i class="fas fa-check-circle mr-1"></i> Rated</span></template>
-                                    <span class="text-[10px] font-medium text-gray-400">Rate & Earn +1</span>
+                                    <!-- UPDATED: SHOW ACTUAL STARS GIVEN -->
+                                    <template x-if="item.rated">
+                                        <div class="flex flex-col items-end">
+                                            <span class="text-xs font-bold text-green-600 flex items-center"><i class="fas fa-check-circle mr-1"></i> Rated</span>
+                                            <div class="flex text-oba-gold text-xs mt-0.5">
+                                                <template x-for="s in item.userRating">
+                                                    <i class="fas fa-star"></i>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!item.rated"><span class="text-[10px] font-medium text-gray-400">Rate & Earn +1</span></template>
                                 </div>
                             </div>
                         </template>
