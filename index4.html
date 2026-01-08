@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBA Epsilon - Final Advanced</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            black: '#1A1A1A',
+                            green: '#004D3B',
+                            lime: '#D4F238',
+                            gray: '#F8F9FB',
+                            surface: '#FFFFFF'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'float': '0 10px 30px -5px rgba(0, 77, 59, 0.15)',
+                        'card': '0 2px 10px rgba(0,0,0,0.03)'
+                    },
+                    animation: {
+                        'enter': 'enter 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'scale': 'scale 0.2s ease-out'
+                    },
+                    keyframes: {
+                        enter: {
+                            '0%': { opacity: '0', transform: 'translateY(10px) scale(0.98)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        scale: {
+                            '0%': { transform: 'scale(0.95)' },
+                            '100%': { transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- LOGIC -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('obaApp', () => ({
+                currentView: 'auth', 
+                authMode: 'login',
+                activeTab: 'home',
+                searchQuery: '',
+                selectedCategory: 'Hamısı',
+                
+                // Modals State
+                showAllReceipts: false,
+                streakModalOpen: false,
+                notificationsOpen: false,
+                
+                user: {
+                    name: 'Epsilon',
+                    surname: 'User',
+                    points: 125, 
+                    balance: 1.45, 
+                    rank: 'Silver',
+                    streak: 3
+                },
+
+                loginForm: { phone: '50 555 55 55', password: 'password' },
+                
+                selectedReceipt: null,
+                feedbackModalOpen: false,
+                selectedRatingItem: null,
+                selectedRatingValue: 0,
+                animateBalance: false, 
+                toast: { visible: false, message: '', type: 'success' },
+                
+                convertInput: 10,
+                feedbackReason: '',
+                feedbackComment: '',
+                feedbackOptions: ["Keyfiyyət / Dad", "Qiymət", "Qablaşdırma", "Xarab olub", "Digər"],
+
+                // Notifications Data
+                notifications: [
+                    { id: 1, title: 'Bonus Qazandınız!', msg: 'Dünənki rəyiniz üçün +5 xal.', time: '2 saat əvvəl', type: 'reward' },
+                    { id: 2, title: 'Yeni Məhsul', msg: 'Atena Xama artıq rəflərdə.', time: '5 saat əvvəl', type: 'info' },
+                    { id: 3, title: 'Endirim', msg: 'Sevdiyiniz şirniyyatlarda 20% endirim.', time: '1 gün əvvəl', type: 'promo' }
+                ],
+
+                categories: ['Hamısı', 'Süd məhsulları', 'Ət', 'Ərzaq', 'Şirniyyat', 'İçkilər', 'Gigiyena'],
+                
+                products: [
+                    { id: 1, name: "Pepsi 1L", price: 1.15, type: "global", rateable: false, category: "İçkilər", rating: 4.8 },
+                    { id: 2, name: "Lays Cipsi 140g", price: 2.85, type: "global", rateable: false, category: "Şirniyyat", rating: 4.7 },
+                    { id: 3, name: "Möcüzə Qarğıdalı yağı 1L", price: 5.79, type: "global", rateable: true, points: 1, category: "Ərzaq", rating: 4.9 },
+                    { id: 4, name: "OBA PL Kərə yağı 250q", price: 3.49, type: "pl", rateable: true, points: 2, category: "Süd məhsulları", rating: 4.8 },
+                    { id: 5, name: "Dorna Keks (Kakao)", price: 0.39, type: "pl", rateable: true, points: 1, category: "Şirniyyat", rating: 4.2 },
+                    { id: 6, name: "YENİ: Atena Xama 20%", price: 1.59, type: "new", rateable: true, points: 3, category: "Süd məhsulları", rating: 4.9 },
+                    { id: 7, name: "OBA Tualet Kağızı", price: 2.99, type: "low_data", rateable: true, points: 2, category: "Gigiyena", rating: 3.8 },
+                    { id: 8, name: "Alemshah Düyü 1kq", price: 2.40, type: "pl", rateable: true, points: 1, category: "Ərzaq", rating: 4.8 },
+                    { id: 9, name: "Tamdad Sosis", price: 4.50, type: "pl", rateable: true, points: 2, category: "Ət", rating: 4.6 },
+                    { id: 10, name: "Bizim Tarla Pomidor", price: 1.80, type: "global", rateable: false, category: "Ərzaq", rating: 4.7 },
+                    { id: 11, name: "Nur Çörək", price: 0.65, type: "global", rateable: false, category: "Ərzaq", rating: 4.5 },
+                    { id: 12, name: "OBA Şəkər Tozu", price: 1.35, type: "pl", rateable: true, points: 1, category: "Ərzaq", rating: 4.4 },
+                    { id: 13, name: "Azerçay Buket", price: 3.20, type: "global", rateable: true, points: 1, category: "İçkilər", rating: 4.9 },
+                    { id: 14, name: "Colgate", price: 2.50, type: "global", rateable: false, category: "Gigiyena", rating: 4.3 }
+                ],
+
+                receipts: [
+                    { id: 5012, date: 'Bu gün', time: '14:30', total: '15.45', status: 'Qiymətləndirilməyib', items: [3, 4, 5, 11, 1, 14] },
+                    { id: 4988, date: 'Dünən', time: '19:15', total: '8.20', status: 'Qiymətləndirilməyib', items: [5, 2, 1, 11, 12] },
+                    { id: 4890, date: 'Dünən', time: '11:00', total: '24.80', status: 'Qiymətləndirilməyib', items: [9, 8, 2, 7, 14, 12, 13, 6] },
+                    { id: 4812, date: '09 Dek', time: '16:45', total: '5.95', status: 'Qiymətləndirilib', items: [1, 5, 11, 13] },
+                    { id: 4755, date: '08 Dek', time: '09:20', total: '12.50', status: 'Qiymətləndirilib', items: [4, 5, 11, 1, 14] },
+                    { id: 4621, date: '05 Dek', time: '20:10', total: '8.90', status: 'Qiymətləndirilib', items: [10, 11, 5, 2] }
+                ].map(r => ({
+                    ...r,
+                    items: r.items.map((pid, idx) => {
+                        const base = [
+                            { id: 1, name: "Pepsi 1L", price: 1.15, type: "global", rateable: false, category: "İçkilər", rating: 4.8 },
+                            { id: 2, name: "Lays Cipsi 140g", price: 2.85, type: "global", rateable: false, category: "Şirniyyat", rating: 4.7 },
+                            { id: 3, name: "Möcüzə Qarğıdalı yağı 1L", price: 5.79, type: "global", rateable: true, points: 1, category: "Ərzaq", rating: 4.9 },
+                            { id: 10, name: "Bizim Tarla Pomidor", price: 1.80, type: "global", rateable: false, category: "Ərzaq", rating: 4.7 },
+                            { id: 4, name: "OBA PL Kərə yağı 250q", price: 3.49, type: "pl", rateable: true, points: 2, category: "Süd məhsulları", rating: 4.8 },
+                            { id: 5, name: "Dorna Keks (Kakao)", price: 0.39, type: "pl", rateable: true, points: 1, category: "Şirniyyat", rating: 4.2 },
+                            { id: 6, name: "YENİ: Atena Xama 20%", price: 1.59, type: "new", rateable: true, points: 3, category: "Süd məhsulları", rating: 4.9 },
+                            { id: 7, name: "OBA Tualet Kağızı", price: 2.99, type: "low_data", rateable: true, points: 2, category: "Gigiyena", rating: 3.8 },
+                            { id: 8, name: "Alemshah Düyü 1kq", price: 2.40, type: "pl", rateable: true, points: 1, category: "Ərzaq", rating: 4.8 },
+                            { id: 9, name: "Tamdad Sosis", price: 4.50, type: "pl", rateable: true, points: 2, category: "Ət", rating: 4.6 },
+                            { id: 11, name: "Nur Çörək", price: 0.65, type: "global", rateable: false, category: "Ərzaq", rating: 4.5 },
+                            { id: 12, name: "OBA Şəkər Tozu", price: 1.35, type: "pl", rateable: true, points: 1, category: "Ərzaq", rating: 4.4 },
+                            { id: 13, name: "Azerçay Buket", price: 3.20, type: "global", rateable: true, points: 1, category: "İçkilər", rating: 4.9 },
+                            { id: 14, name: "Colgate", price: 2.50, type: "global", rateable: false, category: "Gigiyena", rating: 4.3 }
+                        ].find(p => p.id === pid);
+                        return { 
+                            ...base, 
+                            uniqueId: `${r.id}_${idx}`, 
+                            rated: r.status === 'Qiymətləndirilib' && base.rateable, 
+                            userRating: r.status === 'Qiymətləndirilib' && base.rateable ? 5 : 0 // Default 5 if already rated from backend
+                        };
+                    })
+                })),
+
+                get filteredProducts() {
+                    return this.products.filter(p => {
+                        const matchesCat = this.selectedCategory === 'Hamısı' || p.category === this.selectedCategory;
+                        const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return matchesCat && matchesSearch;
+                    });
+                },
+
+                get top10Products() {
+                    return this.products
+                        .filter(p => p.rateable)
+                        .sort((a, b) => b.rating - a.rating)
+                        .slice(0, 10);
+                },
+
+                login() {
+                    this.currentView = 'app';
+                    this.showToast('Xoş Gəldiniz!', 'success');
+                },
+
+                convertPoints() {
+                    const amount = parseInt(this.convertInput);
+                    if (!amount || amount <= 0) return this.showToast('Düzgün məbləğ daxil edin', 'error');
+                    if (this.user.points >= amount) {
+                        this.user.points -= amount;
+                        const cashValue = amount * 0.01;
+                        this.user.balance = parseFloat((this.user.balance + cashValue).toFixed(2));
+                        this.animateBalance = true;
+                        setTimeout(() => this.animateBalance = false, 500);
+                        this.showToast(`+${cashValue.toFixed(2)}₼ Balansa əlavə edildi!`, 'success');
+                    } else {
+                        this.showToast('Kifayət qədər xalınız yoxdur', 'error');
+                    }
+                },
+
+                openReceipt(bill) {
+                    if(bill.status === 'Qiymətləndirilib' && bill.items.filter(i => i.rateable && !i.rated).length === 0) 
+                        return this.showToast('Bu qəbz artıq qiymətləndirilib', 'success');
+                    bill.items.sort((a, b) => Number(b.rateable) - Number(a.rateable));
+                    this.selectedReceipt = bill;
+                },
+
+                getCategoryIcon(category) {
+                    const map = {
+                        'Süd məhsulları': 'fa-cheese',
+                        'İçkilər': 'fa-wine-bottle',
+                        'Ərzaq': 'fa-wheat-awn',
+                        'Şirniyyat': 'fa-cookie-bite',
+                        'Gigiyena': 'fa-pump-soap',
+                        'Ət': 'fa-drumstick-bite'
+                    };
+                    return map[category] || 'fa-basket-shopping';
+                },
+
+                getCategoryStyle(category) {
+                    const map = {
+                        'Süd məhsulları': 'bg-blue-100 text-blue-700',
+                        'İçkilər': 'bg-purple-100 text-purple-700',
+                        'Ərzaq': 'bg-amber-100 text-amber-700',
+                        'Şirniyyat': 'bg-pink-100 text-pink-700',
+                        'Gigiyena': 'bg-teal-100 text-teal-700',
+                        'Ət': 'bg-red-100 text-red-700'
+                    };
+                    return map[category] || 'bg-gray-100 text-gray-700';
+                },
+
+                logout() {
+                    this.currentView = 'auth';
+                    this.authMode = 'login';
+                },
+
+                rateItem(item, stars) {
+                    this.selectedRatingItem = item; 
+                    this.selectedRatingValue = stars; 
+                    if (stars < 3) {
+                        this.feedbackReason = '';
+                        this.feedbackComment = '';
+                        this.feedbackModalOpen = true;
+                    } else {
+                        if(stars >= 4) {
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                        }
+                        this.finalizeRating(item, stars);
+                        const earned = item.points || 1;
+                        this.showToast(`Əla! +${earned} Xal`, 'success');
+                    }
+                },
+
+                submitFeedback() {
+                    if (!this.feedbackReason && this.feedbackComment.length < 3) {
+                        return this.showToast('Səbəb seçin', 'error');
+                    }
+                    this.feedbackModalOpen = false;
+                    this.finalizeRating(this.selectedRatingItem, this.selectedRatingValue);
+                    const earned = this.selectedRatingItem.points || 1;
+                    this.showToast(`Rəyiniz qeydə alındı`, 'success');
+                },
+
+                finalizeRating(item, stars) {
+                    item.rated = true;
+                    item.userRating = stars; // BUG FIX: Store actual rating
+                    this.ratingSessionCount++;
+                    this.user.points += (item.points || 1);
+                    const rateableItems = this.selectedReceipt.items.filter(i => i.rateable);
+                    if (rateableItems.every(i => i.rated)) {
+                        this.selectedReceipt.status = 'Qiymətləndirilib';
+                    }
+                },
+
+                addToCart(product) {
+                    this.showToast(`${product.name} əlavə edildi`, 'success');
+                },
+
+                showToast(msg, type) {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false }, 2000);
+                }
+            }))
+        })
+    </script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        body { background-color: #F8F9FB; }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .squircle { border-radius: 28% 28% 28% 28% / 28% 28% 28% 28%; }
+        .slide-over {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .slide-over.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="font-sans text-brand-black antialiased selection:bg-brand-green selection:text-white">
+
+    <div id="app" x-data="obaApp()" class="w-full min-h-screen relative max-w-md mx-auto bg-[#F8F9FB] shadow-2xl overflow-hidden">
+
+        <!-- AUTH SCREEN -->
+        <div x-show="currentView === 'auth'" x-transition class="absolute inset-0 z-50 bg-white flex flex-col justify-between p-8">
+            <div class="mt-20">
+                <div class="w-16 h-16 bg-brand-green rounded-2xl flex items-center justify-center text-white text-2xl font-black mb-6 shadow-lg shadow-brand-green/30">OBA</div>
+                <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 mb-2">Xoş<br>Gəldiniz.</h1>
+                <p class="text-gray-400 font-medium">Qənaətin yeni ünvanı.</p>
+            </div>
+            
+            <div class="w-full space-y-4 mb-10">
+                <div class="space-y-3">
+                    <input type="tel" x-model="loginForm.phone" class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-4 text-gray-900 font-medium placeholder-gray-400 focus:ring-2 focus:ring-brand-green/20 transition-all" placeholder="Mobil Nömrə">
+                    <input type="password" x-model="loginForm.password" class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-4 text-gray-900 font-medium placeholder-gray-400 focus:ring-2 focus:ring-brand-green/20 transition-all" placeholder="Şifrə">
+                </div>
+                <button @click="login()" class="w-full bg-brand-green text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-green/20 active:scale-95 transition-transform flex justify-between items-center px-6">
+                    <span>Daxil Ol</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN APP -->
+        <div x-show="currentView === 'app'" x-transition.opacity class="min-h-screen flex flex-col">
+            
+            <!-- Modern Header -->
+            <header class="sticky top-0 z-40 bg-[#F8F9FB]/90 backdrop-blur-md px-6 pt-12 pb-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-brand-green font-bold shadow-sm border border-gray-100">
+                        E
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wide">Xoş Gəldin</p>
+                        <h2 class="text-lg font-bold text-gray-900" x-text="user.name"></h2>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Streak Button -->
+                    <div @click="streakModalOpen = true" class="bg-white px-3 py-1.5 rounded-full border border-gray-100 flex items-center space-x-1.5 shadow-sm cursor-pointer active:scale-95 transition-transform">
+                        <i class="fas fa-fire text-orange-500 text-xs animate-pulse"></i>
+                        <span class="text-xs font-bold text-gray-700" x-text="user.streak"></span>
+                    </div>
+                    <!-- Notification Button -->
+                    <button @click="notificationsOpen = true" class="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm relative active:scale-95 transition-transform">
+                        <i class="fas fa-bell text-gray-400"></i>
+                        <div class="absolute top-2.5 right-3 w-2 h-2 bg-brand-red rounded-full border-2 border-white"></div>
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 px-6 pb-32 space-y-8 pt-2">
+
+                <!-- HOME TAB -->
+                <div x-show="activeTab === 'home'" class="space-y-8 animate-enter">
+                    
+                    <!-- Modern Wallet Card (Cleaned) -->
+                    <div class="relative w-full aspect-[1.6] bg-brand-green rounded-[32px] p-6 text-white shadow-float overflow-hidden flex flex-col justify-between group">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+                        <div class="absolute bottom-0 left-0 w-40 h-40 bg-brand-lime opacity-10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+                        
+                        <div class="relative z-10 flex justify-between items-start">
+                            <div>
+                                <p class="text-white/60 text-xs font-medium tracking-wide mb-1">KEŞBEK</p>
+                                <h3 class="text-3xl font-bold tracking-tight flex items-baseline gap-1" :class="{'animate-pulse text-brand-lime': animateBalance}">
+                                    <span x-text="user.balance.toFixed(2)"></span> <span class="text-lg font-medium text-white/80">₼</span>
+                                </h3>
+                            </div>
+                            <div class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center">
+                                <i class="fas fa-wifi rotate-90 text-white/80"></i>
+                            </div>
+                        </div>
+
+                        <div class="relative z-10 flex justify-between items-end">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-qrcode text-brand-black text-lg"></i>
+                                </div>
+                                <div class="text-xs font-mono text-white/70 tracking-widest">**** 3826</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Impact Widget -->
+                    <div class="bg-white rounded-3xl p-5 shadow-soft border border-gray-50 flex items-start space-x-4">
+                        <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-600 shrink-0">
+                            <i class="fas fa-check-circle text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-gray-900 text-sm">Problemi Həll Etdik</h4>
+                                <span class="text-[10px] bg-gray-100 text-gray-500 font-bold px-2 py-1 rounded-full">Yeni</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                <span class="font-bold text-gray-800">OBA Kərə Yağı</span> qablaşdırması rəylərinizə əsasən dəyişdirildi.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Actions Grid -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Points Exchange -->
+                        <div class="bg-white p-5 rounded-3xl shadow-soft border border-gray-50">
+                            <div class="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-600 mb-3">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <p class="text-xs text-gray-400 font-bold uppercase">Xal Balansı</p>
+                            <h4 class="text-2xl font-extrabold text-gray-900" x-text="user.points"></h4>
+                            <div class="mt-3 flex space-x-2">
+                                <input type="number" x-model="convertInput" class="w-full bg-gray-50 rounded-lg px-2 text-center text-sm font-bold outline-none" placeholder="10">
+                                <button @click="convertPoints()" class="bg-brand-black text-white w-10 h-8 rounded-lg flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                                    <i class="fas fa-arrow-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Rate Action -->
+                        <div class="bg-brand-black p-5 rounded-3xl shadow-float text-white flex flex-col justify-between relative overflow-hidden cursor-pointer" @click="activeTab = 'products'">
+                            <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl -mr-5 -mt-5"></div>
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white mb-2">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">Rəy<br>Bildir</h4>
+                                <p class="text-[10px] text-white/60 mt-1">Xal qazan</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clean Receipt List -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">Qəbzlər</h3>
+                            <button @click="showAllReceipts = true" class="text-xs font-bold text-brand-green bg-green-50 px-3 py-1 rounded-full">Hamısı</button>
+                        </div>
+                        <div class="space-y-3">
+                            <template x-for="bill in receipts.slice(0, 3)" :key="bill.id">
+                                <div @click="openReceipt(bill)" class="bg-white p-4 rounded-2xl shadow-card border border-gray-50 flex justify-between items-center cursor-pointer active:scale-[0.98] transition-transform">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-gray-50 flex flex-col items-center justify-center text-gray-400 border border-gray-100">
+                                            <span class="text-[10px] font-bold">DEC</span>
+                                            <span class="text-sm font-bold text-gray-800" x-text="bill.id.toString().slice(-2)"></span>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-gray-900 text-sm" x-text="'Alış #' + bill.id"></p>
+                                            <p class="text-xs text-gray-400 mt-0.5" x-text="bill.items.length + ' məhsul • ' + bill.time"></p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-bold text-gray-900" x-text="bill.total + '₼'"></p>
+                                        <template x-if="bill.status === 'Qiymətləndirilməyib'">
+                                            <div class="flex items-center justify-end text-[10px] text-orange-500 font-bold mt-1">
+                                                <div class="w-1.5 h-1.5 bg-orange-500 rounded-full mr-1.5"></div> Gözləyir
+                                            </div>
+                                        </template>
+                                        <template x-if="bill.status === 'Qiymətləndirilib'">
+                                            <div class="flex items-center justify-end text-[10px] text-green-500 font-bold mt-1">
+                                                <i class="fas fa-check mr-1"></i> Bitdi
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCTS TAB (Minimal Grid) -->
+                <div x-show="activeTab === 'products'" class="space-y-6 animate-enter">
+                    <div class="sticky top-20 z-30">
+                        <div class="relative shadow-sm">
+                            <input type="text" placeholder="Məhsul axtar..." x-model="searchQuery" class="w-full bg-white border-0 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium text-gray-800 placeholder-gray-400 shadow-soft outline-none focus:ring-2 focus:ring-brand-green/10">
+                            <i class="fas fa-search absolute left-5 top-4.5 text-gray-300 text-lg"></i>
+                        </div>
+                        <div class="flex space-x-2 overflow-x-auto hide-scroll mt-4 pb-2">
+                            <template x-for="cat in categories" :key="cat">
+                                <button @click="selectedCategory = cat" 
+                                        :class="selectedCategory === cat ? 'bg-brand-black text-white shadow-lg' : 'bg-white text-gray-500 shadow-sm'"
+                                        class="px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all" x-text="cat">
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <template x-for="product in filteredProducts" :key="product.id">
+                            <div class="bg-white p-4 rounded-3xl shadow-card border border-gray-50 flex items-center justify-between group">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl squircle" :class="getCategoryStyle(product.category)">
+                                        <i class="fas" :class="getCategoryIcon(product.category)"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-900 text-sm" x-text="product.name"></h4>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide" x-text="product.category"></span>
+                                            <template x-if="product.rating >= 4.5 && product.type === 'pl'">
+                                                <span class="text-[9px] bg-brand-green text-white px-2 py-0.5 rounded font-bold">İXRAC</span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-gray-900" x-text="product.price + '₼'"></p>
+                                    <button class="w-8 h-8 rounded-full bg-gray-50 text-gray-400 mt-1 flex items-center justify-center hover:bg-brand-green hover:text-white transition-colors">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- TOP 10 -->
+                <div x-show="activeTab === 'top10'" class="space-y-6 animate-enter">
+                    <div class="text-center py-4">
+                        <h2 class="text-2xl font-extrabold text-gray-900">Xalqın Seçimi</h2>
+                        <p class="text-sm text-gray-400 font-medium">Ən yüksək reytinqli məhsullar</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <template x-for="(product, index) in top10Products" :key="product.id">
+                            <div class="bg-white p-4 rounded-3xl shadow-card border border-gray-50 flex items-center relative overflow-hidden">
+                                <div class="w-8 font-black text-lg italic text-gray-200" x-text="index + 1"></div>
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center mr-4" :class="getCategoryStyle(product.category)">
+                                    <i class="fas" :class="getCategoryIcon(product.category)"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-900 text-sm" x-text="product.name"></h4>
+                                    <div class="flex items-center space-x-1 mt-1 text-oba-gold text-xs">
+                                        <i class="fas fa-star"></i>
+                                        <span class="font-bold text-gray-700 ml-1" x-text="product.rating"></span>
+                                        <span class="text-gray-300 text-[10px] ml-1">(542 rəy)</span>
+                                    </div>
+                                </div>
+                                <template x-if="index < 3">
+                                    <div class="absolute -right-4 -top-4 w-12 h-12 bg-brand-lime rotate-45"></div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- SETTINGS (ADVANCED ACCOUNT PAGE) -->
+                <div x-show="activeTab === 'settings'" class="space-y-6 animate-enter">
+                    <div class="text-center py-6">
+                        <div class="w-24 h-24 bg-brand-green rounded-full mx-auto flex items-center justify-center text-4xl text-white font-bold mb-4 shadow-xl">
+                            E
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">Epsilon User</h2>
+                        <p class="text-sm text-gray-400">Silver Member</p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-soft border border-gray-50 overflow-hidden">
+                        <div class="p-4 border-b border-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-user"></i></div>
+                                <span class="font-bold text-sm text-gray-700">Şəxsi Məlumatlar</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="p-4 border-b border-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><i class="fas fa-credit-card"></i></div>
+                                <span class="font-bold text-sm text-gray-700">Kartlar & Ödəniş</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="p-4 border-b border-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-bell"></i></div>
+                                <span class="font-bold text-sm text-gray-700">Bildirişlər</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 flex items-center justify-center"><i class="fas fa-globe"></i></div>
+                                <span class="font-bold text-sm text-gray-700">Dil Seçimi</span>
+                            </div>
+                            <span class="text-xs text-gray-400 font-medium">Azərbaycan</span>
+                        </div>
+                    </div>
+
+                    <button @click="logout()" class="w-full bg-white border border-red-100 text-red-500 font-bold py-4 rounded-2xl hover:bg-red-50 transition-colors shadow-sm">
+                        Hesabdan Çıx
+                    </button>
+                </div>
+
+            </main>
+
+            <!-- NAVIGATION ISLAND -->
+            <nav class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-brand-black text-white rounded-full px-6 py-4 shadow-2xl shadow-brand-black/30 z-50 flex items-center space-x-8">
+                <button @click="activeTab = 'home'" :class="activeTab === 'home' ? 'text-brand-lime' : 'text-white/50'" class="transition-colors"><i class="fas fa-home text-xl"></i></button>
+                <button @click="activeTab = 'products'" :class="activeTab === 'products' ? 'text-brand-lime' : 'text-white/50'" class="transition-colors"><i class="fas fa-search text-xl"></i></button>
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center -mt-8 border-4 border-[#F8F9FB] shadow-lg text-brand-black">
+                    <i class="fas fa-qrcode text-xl"></i>
+                </div>
+                <button @click="activeTab = 'top10'" :class="activeTab === 'top10' ? 'text-brand-lime' : 'text-white/50'" class="transition-colors"><i class="fas fa-star text-xl"></i></button>
+                <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'text-brand-lime' : 'text-white/50'" class="transition-colors"><i class="fas fa-user text-xl"></i></button>
+            </nav>
+
+        </div>
+
+        <!-- FULL RECEIPT HISTORY MODAL -->
+        <div x-show="showAllReceipts" class="fixed inset-0 z-[60] bg-[#F8F9FB] flex flex-col animate-enter">
+            <div class="px-6 pt-12 pb-4 flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-900">Bütün Qəbzlər</h2>
+                <button @click="showAllReceipts = false" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 pb-10 space-y-4">
+                <template x-for="bill in receipts" :key="bill.id">
+                    <div @click="openReceipt(bill)" class="bg-white p-4 rounded-2xl shadow-card border border-gray-50 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-900 text-sm" x-text="'Alış #' + bill.id"></p>
+                            <p class="text-xs text-gray-400 mt-0.5" x-text="bill.date"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-900" x-text="bill.total + '₼'"></p>
+                            <span class="text-[10px] font-bold" :class="bill.status === 'Qiymətləndirilib' ? 'text-green-500' : 'text-orange-500'" x-text="bill.status"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION SLIDE OVER -->
+        <div x-show="notificationsOpen" class="fixed inset-0 z-[60] flex justify-end">
+            <div class="absolute inset-0 bg-brand-black/20 backdrop-blur-sm" @click="notificationsOpen = false"></div>
+            <div class="w-3/4 max-w-sm bg-white h-full relative z-10 p-6 flex flex-col shadow-2xl transition-transform duration-300" x-transition:enter="translate-x-full" x-transition:enter-end="translate-x-0">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-xl font-bold text-gray-900">Bildirişlər</h3>
+                    <button @click="notificationsOpen = false"><i class="fas fa-times text-gray-400"></i></button>
+                </div>
+                <div class="space-y-6">
+                    <template x-for="notif in notifications">
+                        <div class="flex gap-4">
+                            <div class="w-2 h-2 mt-2 rounded-full shrink-0" :class="notif.type === 'reward' ? 'bg-brand-lime' : 'bg-brand-green'"></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-900" x-text="notif.title"></h4>
+                                <p class="text-xs text-gray-500 mt-1" x-text="notif.msg"></p>
+                                <p class="text-[10px] text-gray-300 mt-2" x-text="notif.time"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- STREAK MODAL -->
+        <div x-show="streakModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-6">
+            <div class="absolute inset-0 bg-brand-black/60 backdrop-blur-sm" @click="streakModalOpen = false"></div>
+            <div class="bg-white w-full max-w-sm rounded-[32px] p-8 relative z-10 text-center animate-enter">
+                <div class="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                    <i class="fas fa-fire text-4xl text-orange-500"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-gray-900">3 Gün Ardıcıl!</h2>
+                <p class="text-gray-500 text-sm mt-2 mb-6">4 gün daha davam et, <span class="font-bold text-brand-green">Sürpriz Hədiyyə</span> qazan.</p>
+                <div class="w-full h-3 bg-gray-100 rounded-full mb-2 overflow-hidden">
+                    <div class="w-[42%] h-full bg-gradient-to-r from-orange-300 to-orange-500 rounded-full"></div>
+                </div>
+                <p class="text-xs text-gray-400 font-bold tracking-widest uppercase">Level 1</p>
+                <button @click="streakModalOpen = false" class="mt-6 w-full bg-brand-black text-white font-bold py-3 rounded-xl">Davam Et</button>
+            </div>
+        </div>
+
+        <!-- RECEIPT MODAL -->
+        <div x-show="selectedReceipt" class="fixed inset-0 z-[70] flex items-end sm:items-center sm:justify-center p-4">
+            <div @click="selectedReceipt = null" x-show="selectedReceipt" x-transition.opacity class="absolute inset-0 bg-brand-black/60 backdrop-blur-sm"></div>
+            
+            <div x-show="selectedReceipt" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-full opacity-0" x-transition:enter-end="translate-y-0 opacity-100" class="w-full max-w-sm bg-white rounded-[32px] overflow-hidden shadow-2xl relative z-10 max-h-[80vh] flex flex-col">
+                <div class="bg-gray-50 p-6 border-b border-dashed border-gray-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-2xl font-extrabold text-gray-900" x-text="selectedReceipt ? selectedReceipt.total + '₼' : ''"></h3>
+                            <p class="text-sm text-gray-400 font-medium mt-1" x-text="selectedReceipt ? 'Qəbz #' + selectedReceipt.id : ''"></p>
+                        </div>
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-400 cursor-pointer" @click="selectedReceipt = null"><i class="fas fa-times"></i></div>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <template x-if="selectedReceipt">
+                        <template x-for="(item, index) in selectedReceipt.items" :key="item.uniqueId">
+                            <div class="flex items-center justify-between p-3 rounded-2xl" :class="item.rateable ? 'bg-white border border-gray-100 shadow-sm' : 'opacity-50'">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm" :class="getCategoryStyle(item.category)"><i class="fas" :class="getCategoryIcon(item.category)"></i></div>
+                                    <div>
+                                        <p class="font-bold text-gray-900 text-sm" x-text="item.name"></p>
+                                        <p class="text-xs text-gray-400" x-text="item.price + '₼'"></p>
+                                    </div>
+                                </div>
+                                <template x-if="item.rateable">
+                                    <div class="flex space-x-1">
+                                        <template x-if="!item.rated">
+                                            <div class="flex">
+                                                <template x-for="i in 5">
+                                                    <button @click="rateItem(item, i)" class="text-gray-200 hover:text-brand-lime text-lg px-0.5 transition-colors"><i class="fas fa-star"></i></button>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <!-- BUG FIX: Showing actual rating -->
+                                        <template x-if="item.rated">
+                                            <span class="text-brand-green font-bold text-xs bg-green-50 px-2 py-1 rounded-lg" x-text="item.userRating + '.0'"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEEDBACK MODAL -->
+        <div x-show="feedbackModalOpen" class="fixed inset-0 z-[80] flex items-end justify-center">
+            <div class="absolute inset-0 bg-brand-black/50 backdrop-blur-sm" @click="feedbackModalOpen = false"></div>
+            <div class="bg-white w-full max-w-md rounded-t-[32px] p-8 relative z-10 animate-enter shadow-2xl">
+                <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                <h3 class="text-xl font-extrabold text-gray-900 mb-2">Problem nədir?</h3>
+                <p class="text-sm text-gray-500 mb-6 font-medium">Bu məhsulu niyə bəyənmədiniz?</p>
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <template x-for="option in feedbackOptions" :key="option">
+                        <button @click="feedbackReason = option" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all border-2" :class="feedbackReason === option ? 'bg-brand-black text-white border-brand-black' : 'bg-white text-gray-500 border-gray-100 hover:border-gray-200'"><span x-text="option"></span></button>
+                    </template>
+                </div>
+                <textarea x-model="feedbackComment" class="w-full bg-gray-50 border-0 rounded-2xl p-4 text-sm font-medium placeholder-gray-400 focus:ring-2 focus:ring-brand-green/20 mb-6" rows="3" placeholder="Əlavə qeydlər..."></textarea>
+                <button @click="submitFeedback()" class="w-full bg-brand-green text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-green/20 active:scale-95 transition-transform">Göndər və Xal Qazan</button>
+            </div>
+        </div>
+
+        <!-- TOAST -->
+        <div x-show="toast.visible" x-transition class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-brand-black/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-3 z-[100]">
+            <i class="fas fa-check-circle text-brand-lime"></i><span class="text-sm font-bold" x-text="toast.message"></span>
+        </div>
+
+    </div>
+</body>
+</html>
