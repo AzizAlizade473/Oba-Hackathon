@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBA Epsilon - Prototype</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        oba: {
+                            dark: '#00382B',   // Deep Forest Green
+                            receipt: '#1B4D3E', // Receipt Header Green
+                            light: '#005C42',  // Lighter Gradient
+                            gold: '#FFC700',   // OBA Gold
+                            red: '#EF4444',    // Discount Red
+                            surface: '#F9FAFB' // Off-white
+                        }
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 0.5s ease-in-out 1',
+                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                        'pulse-gold': 'pulseGold 2s infinite',
+                        'pop': 'pop 0.3s ease-out'
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        pulseGold: {
+                            '0%, 100%': { boxShadow: '0 0 0 0 rgba(255, 199, 0, 0.7)' },
+                            '50%': { boxShadow: '0 0 0 10px rgba(255, 199, 0, 0)' },
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.2)' },
+                            '100%': { transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- LOGIC ENGINE -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('obaApp', () => ({
+                currentView: 'auth', 
+                authMode: 'login',
+                activeTab: 'home',
+                searchQuery: '',
+                selectedCategory: 'Hamısı',
+                showAllReceipts: false, 
+                
+                // User State
+                user: {
+                    name: 'Orxan',
+                    surname: 'Əliyev',
+                    points: 125, 
+                    balance: 1.45, 
+                    rank: 'Bürünc Qonşu',
+                    streak: 3
+                },
+
+                // Auth Forms
+                loginForm: { phone: '50 555 55 55', password: 'password' },
+                regForm: { name: '', surname: '', age: '', phone: '', password: '', confirmPassword: '' },
+
+                // Logic State
+                ratingSessionCount: 0,
+                selectedReceipt: null,
+                feedbackModalOpen: false,
+                selectedRatingItem: null,
+                selectedRatingValue: 0,
+                showCelebration: false,
+                animateBalance: false, 
+                toast: { visible: false, message: '', type: 'success' },
+                
+                // New Logic State
+                convertInput: 10,
+                feedbackReason: '',
+                feedbackComment: '',
+                feedbackOptions: ["Keyfiyyət / Dad", "Qiymət", "Qablaşdırma", "Xarab olub", "Digər"],
+
+                // --- DATA ---
+                categories: ['Hamısı', 'Süd məhsulları', 'Ət', 'Ərzaq', 'Şirniyyat', 'İçkilər', 'Gigiyena'],
+                
+                // PRODUCT DATABASE
+                products: [
+                    { id: 1, name: "Pepsi 1L", price: 1.15, type: "global", rateable: false, category: "İçkilər", rating: 4.8 },
+                    { id: 2, name: "Lays Cipsi 140g", price: 2.85, type: "global", rateable: false, category: "Şirniyyat", rating: 4.7 },
+                    { id: 3, name: "Möcüzə Qarğıdalı yağı 1L", price: 5.79, type: "global", rateable: false, category: "Ərzaq", rating: 4.9 },
+                    { id: 10, name: "Bizim Tarla Pomidor", price: 1.80, type: "global", rateable: false, category: "Ərzaq", rating: 4.7 },
+                    
+                    { id: 4, name: "OBA PL Kərə yağı 250q", price: 3.49, type: "pl", rateable: true, points: 1, category: "Süd məhsulları", rating: 4.5 },
+                    { id: 5, name: "Dorna Keks (Kakao)", price: 0.39, type: "pl", rateable: true, points: 1, category: "Şirniyyat", rating: 4.2 },
+                    { id: 6, name: "YENİ: Atena Xama 20%", price: 1.59, type: "new", rateable: true, points: 2, category: "Süd məhsulları", rating: 4.9 },
+                    { id: 7, name: "OBA Tualet Kağızı", price: 2.99, type: "low_data", rateable: true, points: 2, category: "Gigiyena", rating: 3.8 },
+                    { id: 8, name: "Alemshah Düyü 1kq", price: 2.40, type: "pl", rateable: true, points: 1, category: "Ərzaq", rating: 4.8 },
+                    { id: 9, name: "Tamdad Sosis", price: 4.50, type: "pl", rateable: true, points: 1, category: "Ət", rating: 4.6 }
+                ],
+
+                // 10 BILLS GENERATED
+                receipts: [
+                    { id: 5012, date: 'Bu gün', time: '14:30', total: '7.12', status: 'Qiymətləndirilməyib', items: [1, 6, 5] },
+                    { id: 4890, date: 'Dünən', time: '18:15', total: '12.50', status: 'Qiymətləndirilməyib', items: [3, 7, 2] },
+                    { id: 4755, date: '08 Dek', time: '09:20', total: '4.50', status: 'Qiymətləndirilib', items: [9] },
+                    { id: 4621, date: '05 Dek', time: '20:10', total: '15.80', status: 'Qiymətləndirilməyib', items: [1, 2, 8, 4] },
+                    { id: 4500, date: '01 Dek', time: '13:45', total: '2.99', status: 'Qiymətləndirilməyib', items: [7] },
+                    { id: 4432, date: '28 Noy', time: '11:00', total: '8.40', status: 'Qiymətləndirilib', items: [8, 4, 5] },
+                    { id: 4310, date: '25 Noy', time: '16:30', total: '5.79', status: 'Qiymətləndirilməyib', items: [3] },
+                    { id: 4205, date: '20 Noy', time: '10:15', total: '9.50', status: 'Qiymətləndirilib', items: [6, 9] },
+                    { id: 4111, date: '15 Noy', time: '19:45', total: '11.20', status: 'Qiymətləndirilməyib', items: [10, 2, 5, 5] },
+                    { id: 4002, date: '12 Noy', time: '14:00', total: '3.49', status: 'Qiymətləndirilib', items: [4] }
+                ].map(r => ({
+                    ...r,
+                    items: r.items.map((pid, idx) => {
+                        const base = [
+                            { id: 1, name: "Pepsi 1L", price: 1.15, type: "global", rateable: false, category: "İçkilər", rating: 4.8 },
+                            { id: 2, name: "Lays Cipsi 140g", price: 2.85, type: "global", rateable: false, category: "Şirniyyat", rating: 4.7 },
+                            { id: 3, name: "Möcüzə Qarğıdalı yağı 1L", price: 5.79, type: "global", rateable: false, category: "Ərzaq", rating: 4.9 },
+                            { id: 10, name: "Bizim Tarla Pomidor", price: 1.80, type: "global", rateable: false, category: "Ərzaq", rating: 4.7 },
+                            { id: 4, name: "OBA PL Kərə yağı 250q", price: 3.49, type: "pl", rateable: true, points: 1, category: "Süd məhsulları", rating: 4.5 },
+                            { id: 5, name: "Dorna Keks (Kakao)", price: 0.39, type: "pl", rateable: true, points: 1, category: "Şirniyyat", rating: 4.2 },
+                            { id: 6, name: "YENİ: Atena Xama 20%", price: 1.59, type: "new", rateable: true, points: 2, category: "Süd məhsulları", rating: 4.9 },
+                            { id: 7, name: "OBA Tualet Kağızı", price: 2.99, type: "low_data", rateable: true, points: 2, category: "Gigiyena", rating: 3.8 },
+                            { id: 8, name: "Alemshah Düyü 1kq", price: 2.40, type: "pl", rateable: true, points: 1, category: "Ərzaq", rating: 4.8 },
+                            { id: 9, name: "Tamdad Sosis", price: 4.50, type: "pl", rateable: true, points: 1, category: "Ət", rating: 4.6 }
+                        ].find(p => p.id === pid);
+                        
+                        return { 
+                            ...base, 
+                            uniqueId: `${r.id}_${idx}`, 
+                            rated: r.status === 'Qiymətləndirilib' && base.rateable, 
+                            userRating: r.status === 'Qiymətləndirilib' && base.rateable ? 5 : 0
+                        };
+                    })
+                })),
+
+                get filteredProducts() {
+                    return this.products.filter(p => {
+                        const matchesCat = this.selectedCategory === 'Hamısı' || p.category === this.selectedCategory;
+                        const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return matchesCat && matchesSearch;
+                    });
+                },
+
+                get top10Products() {
+                    return this.products
+                        .filter(p => p.rateable)
+                        .sort((a, b) => b.rating - a.rating)
+                        .slice(0, 10);
+                },
+
+                // --- METHODS ---
+
+                login() {
+                    this.user.name = 'Orxan';
+                    this.user.surname = 'Əliyev';
+                    this.currentView = 'app';
+                    this.showToast('Xoş Gəldiniz!', 'success');
+                },
+
+                // --- FIXED CONVERSION LOGIC ---
+                convertPoints() {
+                    const amount = parseInt(this.convertInput);
+                    
+                    if (!amount || amount <= 0) {
+                        return this.showToast('Zəhmət olmasa düzgün məbləğ daxil edin', 'error');
+                    }
+
+                    if (this.user.points >= amount) {
+                        this.user.points -= amount;
+                        // LOGIC: 1 Point = 0.01 AZN. So 10 Points = 0.10 AZN.
+                        const cashValue = amount * 0.01;
+                        this.user.balance = parseFloat((this.user.balance + cashValue).toFixed(2));
+                        
+                        this.animateBalance = true;
+                        setTimeout(() => this.animateBalance = false, 500);
+                        
+                        this.showToast(`+${cashValue.toFixed(2)}₼ Balansa əlavə edildi!`, 'success');
+                    } else {
+                        this.showToast('Kifayət qədər xalınız yoxdur', 'error');
+                    }
+                },
+
+                openReceipt(bill) {
+                    if(bill.status === 'Qiymətləndirilib' && bill.items.filter(i => i.rateable && !i.rated).length === 0) 
+                        return this.showToast('Bu qəbz artıq qiymətləndirilib', 'success');
+                    
+                    bill.items.sort((a, b) => Number(b.rateable) - Number(a.rateable));
+                    this.selectedReceipt = bill;
+                },
+
+                getProductImage(product) {
+                    const name = product.name.toLowerCase();
+                    if (name.includes('pepsi')) return 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('lays') || name.includes('cipsi')) return 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('yağı') || name.includes('oil')) return 'https://images.unsplash.com/photo-1474979266404-7cadd259f36b?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('keks')) return 'https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('xama')) return 'https://images.unsplash.com/photo-1624451000853-918991b1c67d?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('tualet') || name.includes('paper')) return 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('düyü')) return 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('sosis')) return 'https://images.unsplash.com/photo-1585325701165-351af916e581?auto=format&fit=crop&w=300&q=80';
+                    if (name.includes('pomidor')) return 'https://images.unsplash.com/photo-1596450500101-70233b4e6d32?auto=format&fit=crop&w=300&q=80';
+                    return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80';
+                },
+
+                register() {
+                    this.currentView = 'app';
+                },
+
+                logout() {
+                    this.currentView = 'auth';
+                    this.authMode = 'login';
+                },
+
+                rateItem(item, stars) {
+                    this.selectedRatingItem = item; 
+                    this.selectedRatingValue = stars; 
+
+                    if (stars < 3) {
+                        this.feedbackReason = '';
+                        this.feedbackComment = '';
+                        this.feedbackModalOpen = true;
+                    } else {
+                        // UPGRADE: Confetti on High Rating
+                        if(stars >= 4) {
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                        }
+                        this.finalizeRating(item, stars);
+                        const earned = item.points || 1;
+                        this.showToast(`Əla! +${earned} Xal Qazanıldı`, 'success');
+                    }
+                },
+
+                submitFeedback() {
+                    if (!this.feedbackReason && this.feedbackComment.length < 3) {
+                        return this.showToast('Zəhmət olmasa səbəb seçin və ya şərh yazın', 'error');
+                    }
+                    this.feedbackModalOpen = false;
+                    this.finalizeRating(this.selectedRatingItem, this.selectedRatingValue);
+                    const earned = this.selectedRatingItem.points || 1;
+                    this.showToast(`Rəyiniz qeydə alındı. +${earned} Xal`, 'success');
+                },
+
+                finalizeRating(item, stars) {
+                    item.rated = true;
+                    item.userRating = stars; 
+                    this.ratingSessionCount++;
+                    this.user.points += (item.points || 1);
+                    
+                    const rateableItems = this.selectedReceipt.items.filter(i => i.rateable);
+                    if (rateableItems.every(i => i.rated)) {
+                        this.selectedReceipt.status = 'Qiymətləndirilib';
+                    }
+                },
+
+                addToCart(product) {
+                    this.showToast(`${product.name} siyahıya əlavə edildi`, 'success');
+                },
+
+                showToast(msg, type) {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false }, 3000);
+                }
+            }))
+        })
+    </script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-dark {
+            background: rgba(0, 56, 43, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .receipt-scallop {
+            background: radial-gradient(circle, transparent 50%, #ffffff 50%) -10px -5px;
+            background-size: 20px 20px;
+            background-repeat: repeat-x;
+            height: 15px;
+            width: 100%;
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased text-gray-800">
+
+    <!-- APP CONTAINER -->
+    <div id="app" x-data="obaApp()" class="w-full min-h-screen bg-gray-50 overflow-x-hidden relative" :class="{'bg-oba-dark': currentView === 'auth'}">
+
+        <!-- AUTH VIEW -->
+        <div x-show="currentView === 'auth'" class="w-full min-h-screen flex flex-col justify-center px-8 relative z-10">
+            <div class="absolute top-[-10%] left-[-10%] w-64 h-64 bg-oba-light rounded-full blur-3xl opacity-30"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-oba-gold rounded-full blur-3xl opacity-20"></div>
+
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4">
+                    <span class="text-4xl font-extrabold text-oba-dark tracking-tighter">OBA</span>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">Xoş Gəldiniz</h1>
+                <p class="text-gray-300 text-sm">Qənaət etməyə başlamaq üçün daxil olun.</p>
+            </div>
+
+            <div class="space-y-4">
+                <input type="tel" x-model="loginForm.phone" placeholder="Mobil Nömrə (+994)" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-oba-gold">
+                <input type="password" x-model="loginForm.password" placeholder="Şifrə" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-oba-gold">
+                <button @click="login()" class="w-full bg-oba-gold hover:bg-yellow-400 text-oba-dark font-bold py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">Daxil Ol</button>
+            </div>
+        </div>
+
+        <!-- MAIN APP SHELL -->
+        <div x-show="currentView === 'app'" x-transition.opacity class="min-h-screen flex flex-col bg-gray-50">
+            
+            <!-- Header -->
+            <header class="absolute top-0 w-full z-30 pt-4 pb-4 px-6 flex justify-between items-center glass-dark">
+                <div class="flex flex-col">
+                    <span class="text-xs text-oba-gold uppercase tracking-wider font-semibold">Sabahın Xeyir</span>
+                    <h2 class="text-white font-bold text-lg" x-text="user.name + ' ' + user.surname"></h2>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- UPGRADE: Streak Fire Widget -->
+                    <div class="flex items-center space-x-1.5 bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
+                        <i class="fa-solid fa-fire text-orange-500 animate-pulse"></i>
+                        <span class="text-xs font-bold text-white" x-text="user.streak + ' Gün'"></span>
+                    </div>
+
+                    <div class="relative w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+                        <i class="fas fa-bell text-white"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 pb-24 pt-20">
+
+                <!-- TAB: HOME -->
+                <div x-show="activeTab === 'home'" class="px-6 space-y-6">
+                    
+                    <!-- UPGRADE: Premium Glassmorphism Loyalty Card -->
+                    <div class="w-full aspect-[1.58] rounded-3xl bg-gradient-to-br from-[#00382B] to-[#00604b] p-6 relative overflow-hidden shadow-2xl text-white border border-white/10">
+                        <!-- Decorative Gloss Effect -->
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 blur-3xl rounded-full"></div>
+                        <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                        
+                        <div class="relative z-10 flex justify-between items-start">
+                            <span class="font-extrabold text-2xl tracking-tighter drop-shadow-md">OBA</span>
+                            <i class="fas fa-wifi rotate-90 opacity-70"></i>
+                        </div>
+                        <div class="relative z-10 mt-8">
+                            <span class="text-xs opacity-80 block mb-1 tracking-wide font-medium">Keşbek Balansı</span>
+                            <span class="text-3xl font-bold tracking-tight drop-shadow-sm" :class="{'animate-pop text-oba-gold': animateBalance}">
+                                <span x-text="user.balance.toFixed(2)"></span> <span class="text-lg">₼</span>
+                            </span>
+                        </div>
+                        <div class="absolute bottom-6 left-6 right-6 flex justify-between items-end z-10">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] opacity-70 uppercase tracking-widest font-semibold">Kart Sahibi</span>
+                                <span class="text-sm font-semibold tracking-wide drop-shadow-sm" x-text="user.name + ' ' + user.surname"></span>
+                            </div>
+                            <i class="fas fa-barcode text-4xl opacity-90"></i>
+                        </div>
+                    </div>
+
+                    <!-- CUSTOM POINT EXCHANGE WIDGET -->
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Sizin Xallarınız</p>
+                                <h3 class="text-3xl font-extrabold text-oba-dark" x-text="user.points"></h3>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-gray-400">Kurs</p>
+                                <p class="text-xs font-bold text-oba-gold">10 Xal = 0.10 AZN</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <input type="number" x-model="convertInput" class="w-20 bg-gray-50 border border-gray-200 rounded-xl px-3 text-center font-bold text-oba-dark focus:outline-none focus:ring-2 focus:ring-oba-gold" placeholder="10">
+                            <button @click="convertPoints()" class="flex-1 bg-oba-gold text-oba-dark font-bold py-3 rounded-xl shadow-md active:scale-95 transition-transform flex items-center justify-center">
+                                <i class="fas fa-exchange-alt mr-2"></i> Dəyişdir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Receipts List -->
+                    <div>
+                        <div class="flex justify-between items-end mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">Son Alış-verişlər</h3>
+                            <button @click="showAllReceipts = true" class="text-xs text-oba-light font-medium">Hamısına Bax</button>
+                        </div>
+                        <div class="space-y-3">
+                            <template x-for="bill in receipts.slice(0, 3)" :key="bill.id">
+                                <div @click="openReceipt(bill)" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                            <i class="fas fa-receipt"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-gray-800" x-text="'Qəbz #' + bill.id"></p>
+                                            <p class="text-xs text-gray-500" x-text="bill.date"></p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-bold text-oba-dark" x-text="bill.total + ' ₼'"></p>
+                                        <template x-if="bill.status === 'Qiymətləndirilməyib'">
+                                            <span class="text-[10px] bg-oba-gold/20 text-yellow-700 px-2 py-0.5 rounded-full font-medium">Qiymətləndir</span>
+                                        </template>
+                                        <template x-if="bill.status === 'Qiymətləndirilib'">
+                                            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Bitib</span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: PRODUCTS -->
+                <div x-show="activeTab === 'products'" class="px-4 space-y-4">
+                    <div class="sticky top-0 bg-gray-50 pt-2 pb-2 z-20">
+                        <div class="relative">
+                            <input type="text" placeholder="Məhsul axtar..." x-model="searchQuery" class="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-oba-light/50 text-sm">
+                            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        </div>
+                        <div class="flex space-x-2 overflow-x-auto no-scrollbar mt-3 pb-1">
+                            <template x-for="cat in categories" :key="cat">
+                                <button @click="selectedCategory = cat" 
+                                        :class="selectedCategory === cat ? 'bg-oba-dark text-white' : 'bg-white text-gray-600 border border-gray-200'"
+                                        class="px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors" x-text="cat">
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pb-6">
+                        <template x-for="product in filteredProducts" :key="product.id">
+                            <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col h-full">
+                                <div class="relative h-28 bg-gray-100 rounded-xl mb-3 overflow-hidden">
+                                    <img :src="getProductImage(product)" class="w-full h-full object-cover">
+                                    <template x-if="product.type === 'new'">
+                                        <div class="absolute top-2 left-2 bg-purple-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">YENİ</div>
+                                    </template>
+                                    <template x-if="product.type === 'pl'">
+                                        <div class="absolute bottom-2 right-2 bg-oba-gold text-oba-dark text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">OBA Seçimi</div>
+                                    </template>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-800 leading-tight mb-1" x-text="product.name"></h4>
+                                    <p class="text-[10px] text-gray-500 mb-2" x-text="product.category"></p>
+                                </div>
+                                <div class="flex items-end justify-between">
+                                    <p class="text-sm font-extrabold text-oba-dark" x-text="product.price + ' ₼'"></p>
+                                    <button class="w-7 h-7 bg-oba-light rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- TAB: TOP 10 (SMART FILTER) -->
+                <div x-show="activeTab === 'top10'" class="px-6 space-y-6">
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Ayın Top 10-luğu</h2>
+                        <p class="text-sm text-gray-500">Qonşularınız tərəfindən ən yüksək qiymətləndirilən.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <template x-for="(product, index) in top10Products" :key="product.id">
+                            <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
+                                <div class="w-8 flex-shrink-0 flex justify-center">
+                                    <template x-if="index === 0"><i class="fas fa-crown text-2xl text-yellow-500"></i></template>
+                                    <template x-if="index === 1"><i class="fas fa-medal text-2xl text-gray-400"></i></template>
+                                    <template x-if="index === 2"><i class="fas fa-medal text-2xl text-amber-700"></i></template>
+                                    <template x-if="index > 2"><span class="font-bold text-gray-400 text-lg" x-text="'#' + (index + 1)"></span></template>
+                                </div>
+                                <div class="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                    <img :src="getProductImage(product)" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-bold text-gray-800 text-sm truncate" x-text="product.name"></h4>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="flex text-oba-gold text-[10px]">
+                                            <i class="fas fa-star"></i>
+                                            <span class="text-gray-600 ml-1 font-medium" x-text="product.rating"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button @click="addToCart(product)" class="w-8 h-8 rounded-full bg-oba-light/10 text-oba-light flex items-center justify-center hover:bg-oba-light hover:text-white transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- TAB: SETTINGS -->
+                <div x-show="activeTab === 'settings'" class="px-6 space-y-4">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-4">Profil</h3>
+                        <div class="space-y-3">
+                            <input type="text" x-model="user.name" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                            <input type="text" x-model="user.surname" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <button @click="logout()" class="w-full bg-red-50 text-red-500 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors">Çıxış Et</button>
+                </div>
+
+            </main>
+
+            <!-- NAVIGATION BAR -->
+            <nav class="absolute bottom-0 w-full bg-white border-t border-gray-200 px-6 py-3 pb-6 z-30 flex justify-between items-center">
+                <button @click="activeTab = 'home'" :class="activeTab === 'home' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-home text-xl"></i><span class="text-[10px] font-medium">Ana Səhifə</span></button>
+                <button @click="activeTab = 'products'" :class="activeTab === 'products' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-store text-xl"></i><span class="text-[10px] font-medium">Mağaza</span></button>
+                <div class="w-12"></div>
+                <button @click="activeTab = 'top10'" :class="activeTab === 'top10' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-trophy text-xl"></i><span class="text-[10px] font-medium">Top 10</span></button>
+                <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'text-oba-dark' : 'text-gray-400'" class="flex flex-col items-center space-y-1 w-12 transition-colors"><i class="fas fa-cog text-xl"></i><span class="text-[10px] font-medium">Tənzimləmə</span></button>
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2"><button class="w-14 h-14 bg-oba-dark rounded-full flex items-center justify-center text-oba-gold shadow-lg shadow-oba-dark/40 border-4 border-gray-50"><i class="fas fa-qrcode text-2xl"></i></button></div>
+            </nav>
+        </div>
+
+        <!-- "VIEW ALL" OVERLAY -->
+        <div x-show="showAllReceipts" x-transition.opacity class="absolute inset-0 z-50 bg-gray-900/90 flex flex-col items-center pt-8 pb-4 px-4 overflow-y-auto">
+            <button @click="showAllReceipts = false" class="absolute top-4 right-4 text-white text-2xl z-50"><i class="fas fa-times"></i></button>
+            <div class="w-full max-w-sm space-y-6 pb-10">
+                <template x-for="receipt in receipts" :key="receipt.id">
+                    <div class="w-full shadow-2xl rounded-2xl overflow-hidden relative">
+                        <div class="bg-oba-receipt p-6 text-center text-white relative">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 text-oba-dark font-bold text-xs tracking-tighter">OBA</div>
+                            <h2 class="text-lg font-bold">Elektron Qəbz</h2>
+                            <p class="text-xs text-gray-300 opacity-80">Alış-veriş üçün təşəkkürlər!</p>
+                        </div>
+                        <div class="bg-white p-6 pb-2">
+                            <div class="flex justify-between text-xs text-gray-500 font-medium mb-4 pb-4 border-b border-gray-200 border-dashed">
+                                <span x-text="'Tarix: ' + receipt.date"></span><span x-text="'Saat: ' + (receipt.time || '12:00')"></span>
+                            </div>
+                            <div class="space-y-3 mb-4">
+                                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">MƏHSULLAR</p>
+                                <template x-for="item in receipt.items" :key="item.uniqueId">
+                                    <div class="flex justify-between items-start text-sm">
+                                        <div class="flex flex-col">
+                                            <div class="flex text-gray-600">
+                                                <span class="w-6 opacity-50">1x</span>
+                                                <span x-text="item.name"></span>
+                                            </div>
+                                            <template x-if="item.rated">
+                                                <div class="flex text-oba-gold text-[10px] ml-6 mt-0.5">
+                                                    <template x-for="s in item.userRating"><i class="fas fa-star"></i></template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <span class="font-medium text-gray-800 whitespace-nowrap" x-text="item.price + ' ₼'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t border-gray-200 border-dashed pt-3 space-y-1 mb-4">
+                                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100"><span class="font-bold text-xl text-gray-900">Yekun</span><span class="font-bold text-xl text-gray-900" x-text="receipt.total + ' ₼'"></span></div>
+                            </div>
+                            <div class="py-2 text-center"><i class="fas fa-barcode text-6xl text-gray-700 opacity-70"></i><p class="text-[10px] text-gray-400 mt-1" x-text="'#' + receipt.id"></p></div>
+                        </div>
+                        <div class="bg-white"><div class="receipt-scallop"></div></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- SLIDE-UP RECEIPT MODAL -->
+        <div x-show="selectedReceipt" class="absolute inset-0 z-50 flex items-end">
+            <div @click="selectedReceipt = null" x-show="selectedReceipt" x-transition.opacity class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+            <div x-show="selectedReceipt" x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0" class="w-full bg-gray-50 rounded-t-[2rem] h-[85%] relative flex flex-col shadow-2xl overflow-hidden">
+                <div class="w-full flex justify-center pt-3 pb-1" @click="selectedReceipt = null"><div class="w-12 h-1.5 bg-gray-300 rounded-full"></div></div>
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                    <div><h3 class="text-xl font-bold text-gray-800" x-text="selectedReceipt ? 'Qəbz #' + selectedReceipt.id : ''"></h3><p class="text-xs text-gray-500">Xal qazanmaq üçün qiymətləndirin</p></div>
+                    <button @click="selectedReceipt = null" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <template x-if="selectedReceipt">
+                        <template x-for="(item, index) in selectedReceipt.items" :key="item.uniqueId">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                            <img :src="getProductImage(item)" class="w-full h-full object-cover">
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 text-sm" x-text="item.name"></h4>
+                                            <p class="text-xs text-gray-500" x-text="item.price + ' ₼'"></p>
+                                        </div>
+                                    </div>
+                                    <div x-show="item.points > 1 && item.rateable" class="text-oba-red animate-pulse">
+                                        <i class="fas fa-fire"></i>
+                                    </div>
+                                </div>
+                                
+                                <template x-if="item.rateable">
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        <template x-if="!item.rated">
+                                            <div class="flex justify-between items-center">
+                                                <div class="flex space-x-2">
+                                                    <template x-for="star in 5">
+                                                        <button @click="rateItem(item, star)" class="text-gray-300 hover:text-oba-gold text-xl transition-colors"><i class="fas fa-star"></i></button>
+                                                    </template>
+                                                </div>
+                                                <span class="text-xs font-bold px-2 py-1 rounded bg-white border border-gray-200" :class="item.points > 1 ? 'text-oba-red' : 'text-oba-light'">
+                                                    +<span x-text="item.points"></span> Xal
+                                                </span>
+                                            </div>
+                                        </template>
+                                        <template x-if="item.rated">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-xs font-bold text-green-600"><i class="fas fa-check-circle mr-1"></i> Qiymətləndirilib</span>
+                                                <div class="flex text-oba-gold text-xs"><template x-for="s in item.userRating"><i class="fas fa-star"></i></template></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <template x-if="!item.rateable">
+                                    <div class="bg-gray-50 rounded-lg p-2 text-center">
+                                        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Qlobal Məhsul (Qiymətləndirilmir)</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPGRADE: VISUAL CHIP TAGS FEEDBACK MODAL -->
+        <div x-show="feedbackModalOpen" class="absolute inset-0 z-[60] flex items-center justify-center px-6">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+            <div class="bg-white w-full rounded-2xl p-6 relative z-10 shadow-2xl animate-slide-up">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Səbəb nədir?</h3>
+                <p class="text-sm text-gray-500 mb-4"><span class="font-bold text-oba-dark" x-text="selectedRatingItem?.name"></span> ilə bağlı problem nə idi?</p>
+                
+                <!-- Chips Container -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <template x-for="option in feedbackOptions" :key="option">
+                        <button @click="feedbackReason = option" 
+                                class="px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 border"
+                                :class="feedbackReason === option 
+                                    ? 'bg-oba-light text-white border-oba-light shadow-md' 
+                                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'">
+                            <span x-text="option"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <textarea x-model="feedbackComment" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-oba-gold mb-4" rows="3" placeholder="Şərhinizi bura yazın (İstəyə bağlı)..."></textarea>
+
+                <div class="flex space-x-3">
+                    <button @click="feedbackModalOpen = false" class="flex-1 py-3 text-gray-500 font-semibold text-sm">Ləğv et</button>
+                    <button @click="submitFeedback()" class="flex-1 bg-oba-dark text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-transform">Göndər</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST -->
+        <div x-show="toast.visible" x-transition class="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-3 z-[60] w-max">
+            <i class="fas fa-check-circle text-green-400"></i><span class="text-sm font-medium" x-text="toast.message"></span>
+        </div>
+
+    </div>
+</body>
+</html>
