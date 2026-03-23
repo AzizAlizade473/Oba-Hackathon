@@ -84,7 +84,11 @@ export function HomeScreen({
           bg-brand-green rounded-[32px] p-6 aspect-[1.7] overflow-hidden
           shadow-float relative flex flex-col justify-between
       ─────────────────────────────────────────────────────────────────────── */}
-      <View style={[s.walletCard, { aspectRatio: 1.7, flex: undefined, flexDirection: 'column', justifyContent: 'space-between', padding: 24, overflow: 'hidden' }]}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onBarcodePress}
+        style={[s.walletCard, { aspectRatio: 1.7, flex: undefined, flexDirection: 'column', justifyContent: 'space-between', padding: 24, overflow: 'hidden' }]}
+      >
         
         {/* Top-right blob: absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-16 -mt-16 */}
         <View style={{
@@ -135,18 +139,17 @@ export function HomeScreen({
         {/* Bottom row — Barcode button + last 4 digits: relative z-10 flex (matches image of them next to each other) */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 10 }}>
           {/* w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl with fa-barcode */}
-          <TouchableOpacity 
+          <View 
             style={{ width: 40, height: 40, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
-            onPress={onBarcodePress} activeOpacity={0.7}
           >
             <FontAwesome5 name="barcode" size={20} color="rgba(255,255,255,0.9)" />
-          </TouchableOpacity>
+          </View>
           {/* text-xs font-mono text-white/70 tracking-widest */}
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', letterSpacing: 2 }}>
             {barcodeDigits?.slice(-4) || '****'}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* ── Problem Solved Widget ────────────────────────────────────────────
           bg-white rounded-3xl p-5 shadow-card border border-gray-50

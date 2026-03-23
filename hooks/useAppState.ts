@@ -84,13 +84,33 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
     return num.toString().replace(/\D/g, '');
   }, [user]);
 
-  const notifications = useMemo<AppNotification[]>(
-    () => [
-      { id: 1, title: getText('notif_cashback_title'), msg: getText('notif_cashback_msg'), time: getText('time_2h'), type: 'reward' },
-      { id: 2, title: getText('notif_new_prod_title'), msg: getText('notif_new_prod_msg'), time: getText('time_5h'), type: 'info' },
-    ],
-    [getText],
-  );
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  // Load persisted notifications on mount
+  useEffect(() => {
+    AsyncStorage.getItem('oba_notifications').then((raw) => {
+      if (raw) {
+        try { setNotifications(JSON.parse(raw)); } catch { /* ignore */ }
+      }
+    });
+  }, []);
+
+  const addNotification = useCallback((title: string, msg: string, type: 'reward' | 'info' = 'reward') => {
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const newNotif: AppNotification = {
+      id: Date.now(),
+      title,
+      msg,
+      time: timeStr,
+      type,
+    };
+    setNotifications((prev) => {
+      const updated = [newNotif, ...prev].slice(0, 50); // keep last 50
+      AsyncStorage.setItem('oba_notifications', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const loadUserData = useCallback(async (): Promise<void> => {
     try {
@@ -378,6 +398,7 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
     // Computed
     barcodeDigits,
     notifications,
+    addNotification,
     filteredProducts,
     paginatedProducts,
     totalPages,
