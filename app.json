@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "OBA Epsilon",
+    "slug": "oba-epsilon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#004D3B"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "az.oba.epsilon",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#004D3B"
+      },
+      "package": "az.oba.epsilon"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "oba-epsilon",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "9fcd02af-f601-4cdb-a27b-077a044ddd2a"
+      }
+    }
+  }
+}
