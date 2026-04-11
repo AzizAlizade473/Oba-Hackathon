@@ -70,6 +70,7 @@ export async function loadOrdersFromApi(
           userRatingId: (userRating?.id as string | undefined) ?? null,
           rating: (p.averageRating as number | undefined) ?? 0,
           reviews: (p.ratingCount as number | undefined) ?? 0,
+          orderCreatedAt: order.orderDate as string | undefined,
         } satisfies ProductItem;
       }),
     };

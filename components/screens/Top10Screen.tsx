@@ -4,6 +4,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { getProductIcon } from '../../constants/helpers';
 import { ProductItem } from '../ProductCard';
 
 // Category FontAwesome5 icon names (same as ProductCard)
@@ -74,7 +75,7 @@ export function Top10Screen({
               </Text>
               {/* w-12 h-12 rounded-2xl squircle */}
               <View style={[s.catIcon, { backgroundColor: cat.bg, marginLeft: 4 }]}>
-                <FontAwesome5 name={getCategoryFA(product.catKey)} size={18} color={cat.text} />
+                <FontAwesome5 name={getProductIcon(product.name)} size={18} color={cat.text} />
               </View>
               <View style={{ marginLeft: 10, flex: 1 }}>
                 {/* font-bold text-sm text-gray-900 */}
@@ -113,7 +114,7 @@ export function Top10Screen({
                     backgroundColor: getCategoryStyle(selectedProductDetail.catKey).bg,
                   }]}>
                     <FontAwesome5
-                      name={getCategoryFA(selectedProductDetail.catKey)}
+                      name={getProductIcon(selectedProductDetail.name)}
                       size={28}
                       color={getCategoryStyle(selectedProductDetail.catKey).text}
                     />

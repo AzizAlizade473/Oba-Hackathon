@@ -1,7 +1,6 @@
-// hooks/useRating.ts
-
 import { useState } from 'react';
 import { api } from '../constants/api';
+import { getRatingWaitTime } from '../constants/helpers';
 import { ProductItem } from '../components/ProductCard';
 import { Order } from '../components/screens/HomeScreen';
 import type { User } from '../types';
@@ -34,6 +33,7 @@ export function useRating({
   const [selectedRatingValue, setSelectedRatingValue] = useState(0);
   const [feedbackReason, setFeedbackReason] = useState('');
   const [feedbackComment, setFeedbackComment] = useState('');
+  const [cooldownInfo, setCooldownInfo] = useState<{ timeText: string } | null>(null);
 
   async function submitRatingToBackend(
     item: ProductItem,
@@ -112,6 +112,12 @@ export function useRating({
   }
 
   function handleRate(item: ProductItem, stars: number): void {
+    const waitTime = getRatingWaitTime(item.orderCreatedAt);
+    if (waitTime) {
+      setCooldownInfo({ timeText: waitTime.formatted });
+      return;
+    }
+
     setSelectedRatingItem(item);
     setSelectedRatingValue(stars);
     if (stars <= 3) {
@@ -165,5 +171,7 @@ export function useRating({
     handleRate,
     handleEditRating,
     submitFeedback,
+    cooldownInfo,
+    dismissCooldown: () => setCooldownInfo(null),
   };
 }

@@ -29,6 +29,7 @@ import { BarcodeModal } from './BarcodeModal';
 import { FeedbackModal } from './FeedbackModal';
 import { NotificationsPanel } from './NotificationsPanel';
 import { InstructionsModal } from './InstructionsModal';
+import { CooldownBanner } from './CooldownBanner';
 
 import { AuthScreen } from './screens/AuthScreen';
 import { HomeScreen } from './screens/HomeScreen';
@@ -289,6 +290,14 @@ export default function OBAApp() {
 
       {/* Toast */}
       <Toast visible={state.toast.visible} message={state.toast.message} type={state.toast.type} />
+
+      {/* Cooldown Banner */}
+      <CooldownBanner
+        visible={!!rating.cooldownInfo}
+        timeText={rating.cooldownInfo?.timeText ?? ''}
+        onClose={rating.dismissCooldown}
+        getText={getText}
+      />
 
       {/* Reliability Info Modal */}
       <Modal
