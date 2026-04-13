@@ -84,13 +84,33 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
     return num.toString().replace(/\D/g, '');
   }, [user]);
 
-  const notifications = useMemo<AppNotification[]>(
-    () => [
-      { id: 1, title: getText('notif_cashback_title'), msg: getText('notif_cashback_msg'), time: getText('time_2h'), type: 'reward' },
-      { id: 2, title: getText('notif_new_prod_title'), msg: getText('notif_new_prod_msg'), time: getText('time_5h'), type: 'info' },
-    ],
-    [getText],
-  );
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  // Load persisted notifications on mount
+  useEffect(() => {
+    AsyncStorage.getItem('oba_notifications').then((raw) => {
+      if (raw) {
+        try { setNotifications(JSON.parse(raw)); } catch { /* ignore */ }
+      }
+    });
+  }, []);
+
+  const addNotification = useCallback((title: string, msg: string, type: 'reward' | 'info' = 'reward') => {
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const newNotif: AppNotification = {
+      id: Date.now(),
+      title,
+      msg,
+      time: timeStr,
+      type,
+    };
+    setNotifications((prev) => {
+      const updated = [newNotif, ...prev].slice(0, 50); // keep last 50
+      AsyncStorage.setItem('oba_notifications', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const loadUserData = useCallback(async (): Promise<void> => {
     try {
@@ -170,40 +190,20 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
     }
   }
 
-  async function loadProductDetail(product: ProductItem): Promise<void> {
+  async function loadProductDetail(product: ProductItem | any): Promise<void> {
     try {
       setLoading(true);
-      try {
-        const response = await api.getProduct(product.id);
-        const data = (response.data ?? response) as Record<string, unknown>;
-        const detailedProduct = {
-          ...product,
-          sku: data.sku as string | undefined,
-          averageRating: parseFloat(String(data.averageRating ?? product.rating ?? 0)),
-          ratingCount: (data.ratingCount as number | undefined) ?? product.reviews ?? 0,
-          comments: (data.comments as Array<{ id: string; name: string; score: number; comment: string }> | undefined) ?? [],
-        };
-        setSelectedProductDetail(detailedProduct);
-      } catch (e: any) {
-        // Fallback for permissions error or offline
-        console.log('Using local data for product detail due to API error:', e.message);
-        const detailedProduct = {
-          ...product,
-          sku: undefined,
-          name: product.name,
-          averageRating: product.rating ?? 0,
-          ratingCount: product.reviews ?? 0,
-          comments: [
-            {
-              id: 'fallback_comment_1',
-              name: 'Əziz',
-              score: 4,
-              comment: '' // No comment text visible in mockup, just stars and date
-            }
-          ],
-        };
-        setSelectedProductDetail(detailedProduct);
-      }
+      // We already have detailed info for top products from the loadTopProductsFromApi mapper.
+      // And regular products usually don't have public comments unless admin.
+      const detailedProduct = {
+        ...product,
+        sku: product.sku,
+        averageRating: parseFloat(String(product.averageRating ?? product.rating ?? 0)),
+        ratingCount: product.ratingCount ?? product.reviews ?? 0,
+        comments: product.comments ?? [],
+        ratingDistribution: product.ratingDistribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      };
+      setSelectedProductDetail(detailedProduct);
       setProductDetailModalOpen(true);
     } catch (e) {
       console.error('loadProductDetail error:', e);
@@ -398,6 +398,7 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
     // Computed
     barcodeDigits,
     notifications,
+    addNotification,
     filteredProducts,
     paginatedProducts,
     totalPages,

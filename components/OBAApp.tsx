@@ -1,6 +1,3 @@
-// components/OBAApp.tsx
-// Main OBA App component — orchestrates screens, modals, and state
-
 import React from 'react';
 import {
   View,
@@ -11,11 +8,12 @@ import {
   RefreshControl,
   StyleSheet,
   Modal,
+  BackHandler,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFonts, LibreBarcode39_400Regular } from '@expo-google-fonts/libre-barcode-39';
 
 import { C } from '../constants/colors';
@@ -31,6 +29,7 @@ import { BarcodeModal } from './BarcodeModal';
 import { FeedbackModal } from './FeedbackModal';
 import { NotificationsPanel } from './NotificationsPanel';
 import { InstructionsModal } from './InstructionsModal';
+import { CooldownBanner } from './CooldownBanner';
 
 import { AuthScreen } from './screens/AuthScreen';
 import { HomeScreen } from './screens/HomeScreen';
@@ -59,7 +58,22 @@ export default function OBAApp() {
     showToast: state.showToast,
     setLoading: state.setLoading,
     setAnimateBalance: state.setAnimateBalance,
+    addNotification: state.addNotification,
   });
+
+  // ── Android Back Button ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const onBackPress = () => {
+      if (state.currentView === 'auth') return false; // let system handle
+      if (state.activeTab !== 'home') {
+        state.setActiveTab('home');
+        return true; // prevent exit
+      }
+      return false; // allow exit from home
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [state.currentView, state.activeTab]);
 
   if (!fontsLoaded) {
     return null;
@@ -89,11 +103,13 @@ export default function OBAApp() {
       {/* Header */}
       <View style={s.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={s.avatarBox}>
-            <Text style={{ color: C.green, fontWeight: '700', fontSize: 18 }}>
-              {((state.user?.name as string | undefined)?.charAt(0) || 'O').toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity onPress={() => state.setActiveTab('settings')} activeOpacity={0.7}>
+            <View style={s.avatarBox}>
+              <Text style={{ color: C.green, fontWeight: '700', fontSize: 18 }}>
+                {((state.user?.name as string | undefined)?.charAt(0) || 'O').toUpperCase()}
+              </Text>
+            </View>
+          </TouchableOpacity>
           <View style={{ marginLeft: 10 }}>
             <Text style={s.welcomeLabel}>{getText('welcome')}</Text>
             <Text style={s.headerName}>{(state.user?.name as string | undefined) || 'User'}</Text>
@@ -274,6 +290,14 @@ export default function OBAApp() {
 
       {/* Toast */}
       <Toast visible={state.toast.visible} message={state.toast.message} type={state.toast.type} />
+
+      {/* Cooldown Banner */}
+      <CooldownBanner
+        visible={!!rating.cooldownInfo}
+        timeText={rating.cooldownInfo?.timeText ?? ''}
+        onClose={rating.dismissCooldown}
+        getText={getText}
+      />
 
       {/* Reliability Info Modal */}
       <Modal

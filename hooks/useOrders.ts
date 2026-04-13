@@ -70,6 +70,7 @@ export async function loadOrdersFromApi(
           userRatingId: (userRating?.id as string | undefined) ?? null,
           rating: (p.averageRating as number | undefined) ?? 0,
           reviews: (p.ratingCount as number | undefined) ?? 0,
+          orderCreatedAt: order.orderDate as string | undefined,
         } satisfies ProductItem;
       }),
     };
@@ -119,6 +120,11 @@ export async function loadTopProductsFromApi(): Promise<ProductItem[]> {
       rewardAmount: parseFloat(String(p.rewardAmount ?? 0)),
       rateable: true,
       rated: false,
+      sku: p.sku as string | undefined,
+      comments: (p.comments as Array<{ id: string; name: string; score: number; comment: string; createdAt?: string }>) ?? [],
+      averageRating: parseFloat(String(p.averageRating ?? 0)),
+      ratingCount: (p.ratingCount as number | undefined) ?? 0,
+      ratingDistribution: (p.ratingDistribution as Record<number, number> | undefined) ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
     }))
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 10);

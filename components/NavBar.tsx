@@ -1,8 +1,7 @@
-// components/NavBar.tsx
-
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ActiveTab = 'home' | 'products' | 'top10' | 'settings';
 
@@ -13,8 +12,10 @@ interface NavBarProps {
 }
 
 export function NavBar({ activeTab, onTabChange, onBarcodePress }: NavBarProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.nav}>
+    <View style={[styles.nav, { bottom: Math.max(insets.bottom, 12) + 12 }]}>
       {/* home */}
       <TouchableOpacity onPress={() => onTabChange('home')} style={styles.navItem}>
         <FontAwesome5

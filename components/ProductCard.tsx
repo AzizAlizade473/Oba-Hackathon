@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TranslationDict } from '../i18n/useTranslation';
+import { getProductIcon } from '../constants/helpers';
 
 export interface ProductItem {
   id: string;
@@ -104,7 +105,7 @@ export function ProductCard({ product, onRate, onEdit, isRatingAllowed, t }: Pro
         <View style={ps.leftSection}>
           {/* w-14 h-14 rounded-2xl flex items-center justify-center text-xl squircle */}
           <View style={[ps.catIcon, { backgroundColor: cat.bg }]}>
-            <FontAwesome5 name={getCategoryFA(product.catKey)} size={20} color={cat.text} />
+            <FontAwesome5 name={getProductIcon(product.name)} size={20} color={cat.text} />
           </View>
           <View style={{ marginLeft: 16, flex: 1 }}>
             {/* font-bold text-gray-900 text-sm */}
@@ -220,7 +221,7 @@ export function ReceiptItemCard({ item, onRate, onEdit, isRatingAllowed, t }: Re
       <View style={ps.receiptMainRow}>
         {/* w-12 h-12 rounded-xl flex items-center justify-center */}
         <View style={[ps.receiptCatIcon, { backgroundColor: cat.bg }]}>
-          <FontAwesome5 name={getCategoryFA(item.catKey)} size={16} color={cat.text} />
+          <FontAwesome5 name={getProductIcon(item.name)} size={16} color={cat.text} />
         </View>
         <View style={{ marginLeft: 12, flex: 1 }}>
           {/* font-bold text-gray-900 text-sm truncate */}

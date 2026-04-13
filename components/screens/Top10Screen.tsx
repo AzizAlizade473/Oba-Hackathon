@@ -4,6 +4,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { getProductIcon } from '../../constants/helpers';
 import { ProductItem } from '../ProductCard';
 
 // Category FontAwesome5 icon names (same as ProductCard)
@@ -37,7 +38,8 @@ interface TopProduct extends ProductItem {
   averageRating?: number;
   ratingCount?: number;
   sku?: string;
-  comments?: Array<{ id: string; name: string; score: number; comment: string }>;
+  comments?: Array<{ id: string; name: string; score: number; comment: string; createdAt?: string }>;
+  ratingDistribution?: Record<number, number>;
 }
 
 interface Top10ScreenProps {
@@ -73,7 +75,7 @@ export function Top10Screen({
               </Text>
               {/* w-12 h-12 rounded-2xl squircle */}
               <View style={[s.catIcon, { backgroundColor: cat.bg, marginLeft: 4 }]}>
-                <FontAwesome5 name={getCategoryFA(product.catKey)} size={18} color={cat.text} />
+                <FontAwesome5 name={getProductIcon(product.name)} size={18} color={cat.text} />
               </View>
               <View style={{ marginLeft: 10, flex: 1 }}>
                 {/* font-bold text-sm text-gray-900 */}
@@ -112,7 +114,7 @@ export function Top10Screen({
                     backgroundColor: getCategoryStyle(selectedProductDetail.catKey).bg,
                   }]}>
                     <FontAwesome5
-                      name={getCategoryFA(selectedProductDetail.catKey)}
+                      name={getProductIcon(selectedProductDetail.name)}
                       size={28}
                       color={getCategoryStyle(selectedProductDetail.catKey).text}
                     />
@@ -145,15 +147,15 @@ export function Top10Screen({
                 {/* Rating bars */}
                 <View style={s.ratingStatsContainer}>
                   {[5, 4, 3, 2, 1].map((star) => {
-                    // Generate fake percentages for the fallback to match mockup visually.
-                    // The mockup shows 4 stars having the biggest bar.
-                    const isFourStar = star === 4;
-                    const heightValue = isFourStar ? 60 : 0;
+                    const dist = selectedProductDetail.ratingDistribution || {};
+                    const count = dist[star] || 0;
+                    const totalVotes = Object.values(dist).reduce((a, b) => a + b, 0);
+                    const heightValue = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
 
                     return (
                       <View key={star} style={s.statCol}>
                         <View style={s.statBarBg}>
-                          <View style={[s.statBarFill, { height: `${heightValue}%` }]} />
+                          <View style={[s.statBarFill, { position: 'absolute', bottom: 0, left: 8, right: 8, height: `${heightValue}%` }]} />
                         </View>
                         <Text style={s.statLabel}>{star}★</Text>
                       </View>
@@ -189,7 +191,7 @@ export function Top10Screen({
                       </View>
                     </View>
                     <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 6 }}>
-                      2/10/2026
+                      {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '2/10/2026'}
                     </Text>
                     {c.comment ? (
                       <Text style={{ color: '#6B7280', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>
@@ -286,7 +288,7 @@ const s = StyleSheet.create({
     marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'stretch', // ensures children span the full height of 160px
     height: 160,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -298,6 +300,8 @@ const s = StyleSheet.create({
   },
   statCol: {
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: '100%',
     flex: 1,
   },
   statBarBg: {

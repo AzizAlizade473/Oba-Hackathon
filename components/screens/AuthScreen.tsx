@@ -1,7 +1,6 @@
 // components/screens/AuthScreen.tsx
-// Pixel-perfect match to index.html auth section
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   ScrollView,
@@ -12,6 +11,9 @@ import {
   ActivityIndicator,
   Platform,
   StyleSheet,
+  Modal,
+  FlatList,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -42,6 +44,69 @@ interface AuthScreenProps {
   getText: (key: string) => string;
 }
 
+// ── Drum Picker Column ──────────────────────────────────────────────────────
+const ITEM_HEIGHT = 44;
+const VISIBLE_ITEMS = 5;
+
+function DrumColumn({ data, selectedIndex, onSelect }: { data: string[]; selectedIndex: number; onSelect: (idx: number) => void }) {
+  const flatListRef = useRef<FlatList>(null);
+
+  const onMomentumScrollEnd = (e: any) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+    if (idx >= 0 && idx < data.length) {
+      onSelect(idx);
+    }
+  };
+
+  return (
+    <View style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS, flex: 1, overflow: 'hidden' }}>
+      {/* Highlight band for selected row */}
+      <View style={{
+        position: 'absolute', top: ITEM_HEIGHT * 2, left: 4, right: 4,
+        height: ITEM_HEIGHT, backgroundColor: 'rgba(0,77,59,0.08)', borderRadius: 12, zIndex: 0,
+      }} />
+      <FlatList
+        ref={flatListRef}
+        data={data}
+        keyExtractor={(_, i) => i.toString()}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
+        getItemLayout={(_, index) => ({ length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index })}
+        initialScrollIndex={selectedIndex}
+        renderItem={({ item, index }) => {
+          const isSelected = index === selectedIndex;
+          return (
+            <TouchableOpacity
+              onPress={() => {
+                onSelect(index);
+                flatListRef.current?.scrollToIndex({ index, animated: true });
+              }}
+              style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}
+            >
+              <Text style={{
+                fontSize: isSelected ? 20 : 15,
+                fontWeight: isSelected ? '700' : '400',
+                color: isSelected ? '#004D3B' : '#9CA3AF',
+              }}>
+                {item}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+      />
+    </View>
+  );
+}
+
+const MONTHS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 80 }, (_, i) => String(currentYear - i));
+
 export function AuthScreen({
   authMode,
   setAuthMode,
@@ -54,34 +119,50 @@ export function AuthScreen({
   loading,
   getText,
 }: AuthScreenProps) {
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  // Parse existing date or use defaults
+  const parts = registerForm.dateOfBirth?.split('-') || [];
+  const [selYear, setSelYear] = useState(() => {
+    const yi = YEARS.indexOf(parts[0] || '2000');
+    return yi >= 0 ? yi : YEARS.indexOf('2000');
+  });
+  const [selMonth, setSelMonth] = useState(() => {
+    const mi = MONTHS.indexOf(parts[1] || '01');
+    return mi >= 0 ? mi : 0;
+  });
+  const [selDay, setSelDay] = useState(() => {
+    const di = DAYS.indexOf(parts[2] || '01');
+    return di >= 0 ? di : 0;
+  });
+
+  const confirmDate = () => {
+    const dateStr = `${YEARS[selYear]}-${MONTHS[selMonth]}-${DAYS[selDay]}`;
+    setRegisterForm((p) => ({ ...p, dateOfBirth: dateStr }));
+    setDatePickerOpen(false);
+  };
+
   return (
     <SafeAreaView style={s.authContainer}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        {/* bg-brand-green/[0.06] w-96 h-96 rounded-full absolute -top-32 -left-32 */}
         <View style={s.authBgShape1} />
-        {/* bg-brand-lime/[0.12] w-96 h-96 rounded-full absolute -bottom-32 -right-32 */}
         <View style={s.authBgShape2} />
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', padding: 32 }}>
           {/* Logo */}
           <View style={{ marginTop: 40 }}>
-            {/* w-16 h-16 bg-brand-green rounded-2xl shadow-xl shadow-brand-green/30 */}
             <View style={s.logoBox}>
-              {/* text-xl font-black tracking-wide text-white */}
               <Text style={s.logoText}>OBA</Text>
             </View>
-            {/* text-[32px] font-extrabold text-gray-900 tracking-tight */}
             <Text style={s.authTitle}>{getText('welcome_title')}</Text>
-            {/* text-gray-400 font-medium text-base */}
             <Text style={s.authSub}>{getText('welcome_sub')}</Text>
           </View>
 
           {/* Login */}
           {authMode === 'login' && (
             <View style={{ marginBottom: 40 }}>
-              {/* bg-gray-50 rounded-2xl px-5 py-4 text-sm font-medium text-gray-900 */}
               <TextInput
                 style={s.input}
                 placeholder={getText('phone_placeholder')}
@@ -98,13 +179,10 @@ export function AuthScreen({
                 value={loginForm.password}
                 onChangeText={(v) => setLoginForm((p) => ({ ...p, password: v }))}
               />
-              {/* bg-brand-green text-white font-bold rounded-2xl py-4 px-6 shadow-xl shadow-brand-green/25 */}
               <TouchableOpacity style={s.primaryBtn} onPress={onLogin} disabled={loading}>
                 <Text style={s.primaryBtnText}>{getText('login_btn')}</Text>
-                {/* fas fa-arrow-right text-white */}
                 <FontAwesome5 name="arrow-right" size={16} color="#FFFFFF" />
               </TouchableOpacity>
-              {/* text-brand-green font-bold text-sm */}
               <TouchableOpacity onPress={() => setAuthMode('register')}>
                 <Text style={s.switchAuthText}>{getText('no_account')}</Text>
               </TouchableOpacity>
@@ -136,13 +214,17 @@ export function AuthScreen({
                 value={registerForm.phone}
                 onChangeText={(v) => setRegisterForm((p) => ({ ...p, phone: v }))}
               />
-              <TextInput
-                style={[s.input, { marginTop: 12 }]}
-                placeholder="Date of Birth (YYYY-MM-DD)"
-                placeholderTextColor="#9CA3AF"
-                value={registerForm.dateOfBirth}
-                onChangeText={(v) => setRegisterForm((p) => ({ ...p, dateOfBirth: v }))}
-              />
+              {/* Date of Birth — Tap to open drum picker */}
+              <TouchableOpacity
+                style={[s.input, { marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                onPress={() => setDatePickerOpen(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: registerForm.dateOfBirth ? '#111827' : '#9CA3AF', fontSize: 15, fontWeight: '500' }}>
+                  {registerForm.dateOfBirth || 'Date of Birth'}
+                </Text>
+                <FontAwesome5 name="calendar-alt" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
               <TextInput
                 style={[s.input, { marginTop: 12 }]}
                 placeholder={getText('password_placeholder')}
@@ -167,6 +249,42 @@ export function AuthScreen({
           <ActivityIndicator size="large" color="#004D3B" />
         </View>
       )}
+
+      {/* ── Date Picker Modal ──────────────────────────────────────────────── */}
+      <Modal visible={datePickerOpen} transparent animationType="fade" onRequestClose={() => setDatePickerOpen(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setDatePickerOpen(false)}
+          >
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} />
+          </TouchableOpacity>
+          <View style={{
+            backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+            paddingTop: 16, paddingBottom: 32, paddingHorizontal: 20,
+            shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 20,
+          }}>
+            {/* Handle */}
+            <View style={{ width: 48, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 16 }}>
+              Date of Birth
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <DrumColumn data={DAYS} selectedIndex={selDay} onSelect={setSelDay} />
+              <DrumColumn data={MONTH_LABELS} selectedIndex={selMonth} onSelect={setSelMonth} />
+              <DrumColumn data={YEARS} selectedIndex={selYear} onSelect={setSelYear} />
+            </View>
+            <TouchableOpacity
+              style={{ backgroundColor: '#004D3B', borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 20 }}
+              onPress={confirmDate}
+              activeOpacity={0.9}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

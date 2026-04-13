@@ -154,7 +154,7 @@ export const s = StyleSheet.create({
 
   // Loading & Toast
   loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.8)', alignItems: 'center', justifyContent: 'center', zIndex: 200 },
-  toast: { position: 'absolute', top: 50, alignSelf: 'center', backgroundColor: 'rgba(26,26,26,0.9)', borderRadius: 30, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', zIndex: 300, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
+  toast: { position: 'absolute', top: 50, alignSelf: 'center', maxWidth: '85%', backgroundColor: 'rgba(26,26,26,0.9)', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', zIndex: 300, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
   toastIcon: { color: C.lime, marginRight: 8, fontSize: 16 },
-  toastText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  toastText: { color: '#fff', fontWeight: '700', fontSize: 13, flexShrink: 1 },
 });

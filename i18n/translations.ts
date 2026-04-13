@@ -39,6 +39,9 @@ export const translations: Translations = {
     reliability_title: 'Güvənilirlik Skoru',
     reliability_desc: 'Spam bənzəri davranışlar (təsadüfi və ya qeyri-dürüst rəylər) güvənilirlik skorunuzu aşağı salacaq. Güvənilirlik məhsullardan qazandığınız mükafat puluna birbaşa təsir edir. Onu yüksək tutmaq üçün həmişə dürüst və diqqətli rəylər verin.',
     got_it: 'Aydındır',
+    rating_wait_message: '{time} sonra qiymətləndirin',
+    cooldown_title: 'Gözləmə müddəti',
+    cooldown_explanation: 'Dürüst rəylər üçün alışdan 24 saat sonra qiymətləndirmə açılır. Bu, məhsulu sınaqdan keçirməyiniz üçündür.',
   },
   en: {
     months: { Jan:'Jan', Feb:'Feb', Mar:'Mar', Apr:'Apr', May:'May', Jun:'Jun', Jul:'Jul', Aug:'Aug', Sep:'Sep', Oct:'Oct', Nov:'Nov', Dec:'Dec' },
@@ -75,6 +78,9 @@ export const translations: Translations = {
     reliability_title: 'Reliability',
     reliability_desc: 'Spam-like behavior (random or dishonest ratings) will lower your reliability score. Your reliability directly affects the reward money you earn from products. To keep it high, always provide honest and thoughtful ratings.',
     got_it: 'Got it',
+    rating_wait_message: 'Rate in {time}',
+    cooldown_title: 'Cooldown period',
+    cooldown_explanation: 'Ratings open 24 hours after purchase so you can try the product first. This helps keep reviews honest and useful.',
   },
   ru: {
     months: { Jan:'Янв', Feb:'Фев', Mar:'Мар', Apr:'Апр', May:'Май', Jun:'Июн', Jul:'Июл', Aug:'Авг', Sep:'Сен', Oct:'Окт', Nov:'Ноя', Dec:'Дек' },
@@ -111,5 +117,8 @@ export const translations: Translations = {
     reliability_title: 'Надежность',
     reliability_desc: 'Спамоподобное поведение (случайные или нечестные оценки) снизит ваш показатель надежности. Ваша надежность напрямую влияет на сумму вознаграждения, которую вы зарабатываете на продуктах. Чтобы поддерживать ее на высоком уровне, всегда оставляйте честные отзывы.',
     got_it: 'Понятно',
+    rating_wait_message: 'Оцените через {time}',
+    cooldown_title: 'Период ожидания',
+    cooldown_explanation: 'Оценка открывается через 24 часа после покупки, чтобы вы успели попробовать товар. Это помогает сохранять отзывы честными.',
   },
 };

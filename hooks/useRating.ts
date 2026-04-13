@@ -1,7 +1,6 @@
-// hooks/useRating.ts
-
 import { useState } from 'react';
 import { api } from '../constants/api';
+import { getRatingWaitTime } from '../constants/helpers';
 import { ProductItem } from '../components/ProductCard';
 import { Order } from '../components/screens/HomeScreen';
 import type { User } from '../types';
@@ -16,6 +15,7 @@ interface UseRatingProps {
   showToast: (msg: string, type: string) => void;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setAnimateBalance: React.Dispatch<React.SetStateAction<boolean>>;
+  addNotification: (title: string, msg: string, type?: 'reward' | 'info') => void;
 }
 
 export function useRating({
@@ -26,12 +26,14 @@ export function useRating({
   showToast,
   setLoading,
   setAnimateBalance,
+  addNotification,
 }: UseRatingProps) {
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [selectedRatingItem, setSelectedRatingItem] = useState<ProductItem | null>(null);
   const [selectedRatingValue, setSelectedRatingValue] = useState(0);
   const [feedbackReason, setFeedbackReason] = useState('');
   const [feedbackComment, setFeedbackComment] = useState('');
+  const [cooldownInfo, setCooldownInfo] = useState<{ timeText: string } | null>(null);
 
   async function submitRatingToBackend(
     item: ProductItem,
@@ -73,8 +75,16 @@ export function useRating({
       setAnimateBalance(true);
       setTimeout(() => setAnimateBalance(false), 500);
 
-      if (earnedAmount > 0) showToast(`+${earnedAmount.toFixed(2)}₼`, 'success');
-      else showToast(getText('feedback_success'), 'success');
+      if (earnedAmount > 0) {
+        showToast(`+${earnedAmount.toFixed(2)}₼`, 'success');
+        addNotification(
+          getText('notif_cashback_title') || 'Cashback Earned!',
+          `+${earnedAmount.toFixed(2)}₼ — ${item.name}`,
+          'reward',
+        );
+      } else {
+        showToast(getText('feedback_success'), 'success');
+      }
 
       const productId = item.id;
       setOrders((prev) =>
@@ -102,6 +112,12 @@ export function useRating({
   }
 
   function handleRate(item: ProductItem, stars: number): void {
+    const waitTime = getRatingWaitTime(item.orderCreatedAt);
+    if (waitTime) {
+      setCooldownInfo({ timeText: waitTime.formatted });
+      return;
+    }
+
     setSelectedRatingItem(item);
     setSelectedRatingValue(stars);
     if (stars <= 3) {
@@ -155,5 +171,7 @@ export function useRating({
     handleRate,
     handleEditRating,
     submitFeedback,
+    cooldownInfo,
+    dismissCooldown: () => setCooldownInfo(null),
   };
 }
