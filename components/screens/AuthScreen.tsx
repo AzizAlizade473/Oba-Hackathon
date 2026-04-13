@@ -171,6 +171,7 @@ export function AuthScreen({
                 value={loginForm.phone}
                 onChangeText={(v) => setLoginForm((p) => ({ ...p, phone: v }))}
               />
+              <Text style={s.inputHint}>{getText('hint_phone')}</Text>
               <TextInput
                 style={[s.input, { marginTop: 12 }]}
                 placeholder={getText('password_placeholder')}
@@ -179,6 +180,7 @@ export function AuthScreen({
                 value={loginForm.password}
                 onChangeText={(v) => setLoginForm((p) => ({ ...p, password: v }))}
               />
+              <Text style={s.inputHint}>{getText('hint_password')}</Text>
               <TouchableOpacity style={s.primaryBtn} onPress={onLogin} disabled={loading}>
                 <Text style={s.primaryBtnText}>{getText('login_btn')}</Text>
                 <FontAwesome5 name="arrow-right" size={16} color="#FFFFFF" />
@@ -214,6 +216,7 @@ export function AuthScreen({
                 value={registerForm.phone}
                 onChangeText={(v) => setRegisterForm((p) => ({ ...p, phone: v }))}
               />
+              <Text style={s.inputHint}>Format: +994xxxxxxxxx</Text>
               {/* Date of Birth — Tap to open drum picker */}
               <TouchableOpacity
                 style={[s.input, { marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
@@ -233,6 +236,7 @@ export function AuthScreen({
                 value={registerForm.password}
                 onChangeText={(v) => setRegisterForm((p) => ({ ...p, password: v }))}
               />
+              <Text style={s.inputHint}>{getText('hint_password')}</Text>
               <TouchableOpacity style={s.primaryBtn} onPress={onRegister} disabled={loading}>
                 <Text style={s.primaryBtnText}>{getText('register_btn')}</Text>
                 <FontAwesome5 name="arrow-right" size={16} color="#FFFFFF" />
@@ -399,5 +403,12 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 200,
+  },
+  inputHint: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginLeft: 8,
+    marginTop: 6,
+    fontWeight: '500',
   },
 });

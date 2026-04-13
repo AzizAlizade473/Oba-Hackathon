@@ -1,7 +1,6 @@
-// constants/api.ts
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 export const API_BASE_URL = 'http://13.60.193.156:8080/api/v1';
 
 export interface RequestOptions {
@@ -16,31 +15,56 @@ export interface ApiResponse {
 
 export const api = {
   async getToken(): Promise<string | null> {
-    return AsyncStorage.getItem('oba_token');
+    if (Platform.OS === 'web') {
+      // Fallback for web testing since SecureStore requires native Keystore
+      return AsyncStorage.getItem('oba_sec_token');
+    }
+    return SecureStore.getItemAsync('oba_sec_token');
   },
 
   async setToken(token: string): Promise<void> {
-    await AsyncStorage.setItem('oba_token', token);
+    if (Platform.OS === 'web') {
+      await AsyncStorage.setItem('oba_sec_token', token);
+    } else {
+      await SecureStore.setItemAsync('oba_sec_token', token);
+    }
   },
 
   async clearToken(): Promise<void> {
-    await AsyncStorage.removeItem('oba_token');
+    if (Platform.OS === 'web') {
+      await AsyncStorage.removeItem('oba_sec_token');
+    } else {
+      await SecureStore.deleteItemAsync('oba_sec_token');
+    }
     await AsyncStorage.removeItem('oba_user');
   },
 
-  async request(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse> {
+  async request(endpoint: string, options: RequestOptions = {}, retries = 3): Promise<ApiResponse> {
     const token = await this.getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
       const data = await response.json() as ApiResponse;
+      
+      if (!response.ok && response.status >= 500 && retries > 0) {
+         console.warn(`API 5xx Error on ${endpoint}. Retrying... (${retries} left)`);
+         await new Promise(res => setTimeout(res, 1000)); 
+         return this.request(endpoint, options, retries - 1);
+      }
+      
       if (!response.ok) throw new Error((data.message as string) || 'Request failed');
       return data;
-    } catch (error: unknown) {
+    } catch (error: any) {
+      if (retries > 0 && String(error).includes('Network request failed')) {
+         console.warn(`Network Error on ${endpoint}. Retrying... (${retries} left)`);
+         await new Promise(res => setTimeout(res, 1000));
+         return this.request(endpoint, options, retries - 1);
+      }
       console.error('API Error:', error);
       throw error;
     }

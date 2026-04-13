@@ -216,6 +216,12 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
   async function login(): Promise<void> {
     try {
       setLoading(true);
+      if (!/^\+994\d{9}$/.test(loginForm.phone)) {
+        throw new Error(getText('val_phone_format'));
+      }
+      if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(loginForm.password)) {
+        throw new Error(getText('val_pass_format'));
+      }
       const response = await api.login(loginForm.phone, loginForm.password);
       const respUser = response.user as User;
       setUser({
@@ -242,9 +248,34 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
     try {
       setLoading(true);
       if (!registerForm.name || !registerForm.surname) throw new Error(getText('val_name'));
-      if (!registerForm.phone) throw new Error(getText('val_phone'));
+      if (!/^\+994\d{9}$/.test(registerForm.phone)) {
+        throw new Error(getText('val_phone_format'));
+      }
       if (!registerForm.dateOfBirth) throw new Error(getText('val_dob'));
-      if (!registerForm.password || registerForm.password.length < 6) throw new Error(getText('val_pass'));
+      
+      const parts = registerForm.dateOfBirth.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        const dobDate = new Date(y, m - 1, d);
+        if (dobDate.getFullYear() !== y || dobDate.getMonth() !== (m - 1) || dobDate.getDate() !== d) {
+           throw new Error(getText('val_dob_invalid'));
+        }
+        const today = new Date();
+        let age = today.getFullYear() - dobDate.getFullYear();
+        const mDiff = today.getMonth() - dobDate.getMonth();
+        if (mDiff < 0 || (mDiff === 0 && today.getDate() < dobDate.getDate())) {
+           age--;
+        }
+        if (age < 18) {
+           throw new Error(getText('val_underage'));
+        }
+      }
+
+      if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(registerForm.password)) {
+        throw new Error(getText('val_pass_format'));
+      }
 
       const response = await api.register(registerForm);
       const respUser = response.user as User;

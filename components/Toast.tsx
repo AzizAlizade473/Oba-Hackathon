@@ -13,8 +13,8 @@ interface ToastProps {
 
 const ICON_MAP: Record<string, { name: string; color: string }> = {
   success: { name: 'check-circle', color: '#D4F238' },
-  error:   { name: 'clock',        color: '#FBBF24' },
-  info:    { name: 'info-circle',   color: '#60A5FA' },
+  error:   { name: 'times-circle', color: '#EF4444' },
+  info:    { name: 'info-circle',  color: '#60A5FA' },
 };
 
 export function Toast({ visible, message, type }: ToastProps) {

@@ -82,18 +82,21 @@ export default function OBAApp() {
   // ── Auth View ───────────────────────────────────────────────────────────────
   if (state.currentView === 'auth') {
     return (
-      <AuthScreen
-        authMode={state.authMode}
-        setAuthMode={state.setAuthMode}
-        loginForm={state.loginForm}
-        setLoginForm={state.setLoginForm}
-        registerForm={state.registerForm}
-        setRegisterForm={state.setRegisterForm}
-        onLogin={state.login}
-        onRegister={state.register}
-        loading={state.loading}
-        getText={getText}
-      />
+      <>
+        <AuthScreen
+          authMode={state.authMode}
+          setAuthMode={state.setAuthMode}
+          loginForm={state.loginForm}
+          setLoginForm={state.setLoginForm}
+          registerForm={state.registerForm}
+          setRegisterForm={state.setRegisterForm}
+          onLogin={state.login}
+          onRegister={state.register}
+          loading={state.loading}
+          getText={getText}
+        />
+        <Toast visible={state.toast.visible} message={state.toast.message} type={state.toast.type} />
+      </>
     );
   }
 
@@ -102,7 +105,7 @@ export default function OBAApp() {
     <SafeAreaView style={s.appContainer}>
       {/* Header */}
       <View style={s.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={localStyles.rowCenter}>
           <TouchableOpacity onPress={() => state.setActiveTab('settings')} activeOpacity={0.7}>
             <View style={s.avatarBox}>
               <Text style={{ color: C.green, fontWeight: '700', fontSize: 18 }}>
@@ -115,26 +118,10 @@ export default function OBAApp() {
             <Text style={s.headerName}>{(state.user?.name as string | undefined) || 'User'}</Text>
           </View>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={localStyles.rowCenter}>
           {/* Trust score badge — touchable, opens info modal */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              backgroundColor: '#fff',
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: '#F3F4F6',
-              marginRight: 8,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.03,
-              shadowRadius: 4,
-              elevation: 1,
-            }}
+            style={localStyles.trustScoreBadge}
             onPress={() => setReliabilityInfoOpen(true)}
             activeOpacity={0.9}
           >
@@ -148,13 +135,7 @@ export default function OBAApp() {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '700',
-                color: '#374151',
-              }}
-            >
+            <Text style={localStyles.trustScoreText}>
               {`${Math.round((((state.user?.reliability as number | undefined) || 0) * 100))}%`}
             </Text>
           </TouchableOpacity>
@@ -306,35 +287,17 @@ export default function OBAApp() {
         transparent
         onRequestClose={() => setReliabilityInfoOpen(false)}
       >
-        <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
+        <View style={localStyles.modalWrapper}>
           <TouchableOpacity
             style={StyleSheet.absoluteFillObject}
             activeOpacity={1}
             onPress={() => setReliabilityInfoOpen(false)}
           >
-            <View style={{ flex: 1, backgroundColor: 'rgba(26,26,26,0.55)' }} />
+            <View style={localStyles.modalBackdrop} />
           </TouchableOpacity>
-          <View style={{
-            backgroundColor: '#fff',
-            borderRadius: 32,
-            padding: 32,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.15,
-            shadowRadius: 30,
-            elevation: 20,
-            alignItems: 'center',
-          }}>
+          <View style={localStyles.modalContent}>
             {/* Top rounded square with shield icon */}
-            <View style={{
-              width: 72,
-              height: 72,
-              borderRadius: 24,
-              backgroundColor: '#ECFDF5',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 24,
-            }}>
+            <View style={localStyles.shieldContainer}>
               <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
@@ -347,28 +310,22 @@ export default function OBAApp() {
             </View>
 
             {/* Title */}
-            <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 16 }}>
+            <Text style={localStyles.modalTitle}>
               {getText('reliability_title') || 'Reliability'}
             </Text>
 
             {/* Description Text */}
-            <Text style={{ fontSize: 15, color: '#6B7280', lineHeight: 24, textAlign: 'center', marginBottom: 32 }}>
+            <Text style={localStyles.modalDesc}>
               {getText('reliability_desc') || 'Spam-like behavior (random or dishonest ratings) will lower your reliability score. Your reliability directly affects the reward money you earn from products. To keep it high, always provide honest and thoughtful ratings.'}
             </Text>
 
             {/* "Got it" Button */}
             <TouchableOpacity
-              style={{
-                backgroundColor: '#004D3B',
-                width: '100%',
-                paddingVertical: 18,
-                borderRadius: 16,
-                alignItems: 'center',
-              }}
+              style={localStyles.gotItButton}
               onPress={() => setReliabilityInfoOpen(false)}
               activeOpacity={0.9}
             >
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+              <Text style={localStyles.gotItButtonText}>
                 {getText('got_it') || 'Got it'}
               </Text>
             </TouchableOpacity>
@@ -378,3 +335,86 @@ export default function OBAApp() {
     </SafeAreaView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  modalWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(26,26,26,0.55)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 32,
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 30,
+    elevation: 20,
+    alignItems: 'center',
+  },
+  shieldContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  modalDesc: {
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  gotItButton: {
+    backgroundColor: '#004D3B',
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  gotItButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  trustScoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  trustScoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#374151',
+  },
+});
