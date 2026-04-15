@@ -64,6 +64,7 @@ interface ProductCardProps {
   onRate: (product: ProductItem, stars: number) => void;
   onEdit: (product: ProductItem) => void;
   isRatingAllowed?: (product: ProductItem) => boolean;
+  reliability?: number;
   t: TranslationDict;
 }
 
@@ -90,10 +91,11 @@ function StarRow({ value, onRate, disabled, dimmed }: { value: number; onRate: (
   );
 }
 
-export function ProductCard({ product, onRate, onEdit, isRatingAllowed, t }: ProductCardProps) {
+export function ProductCard({ product, onRate, onEdit, isRatingAllowed, reliability, t }: ProductCardProps) {
   const cat = getCategoryStyle(product.catKey);
   const repReward = Number(product.reputationAppliedReward ?? product.rewardAmount ?? 0);
   const baseReward = Number(product.baseReward ?? repReward);
+  const repPercent = reliability !== undefined ? Math.round(reliability * 100) : 100;
   const hasReward = repReward > 0 && !product.rated;
   const ratingAllowed = isRatingAllowed ? isRatingAllowed(product) : true;
 
@@ -158,16 +160,16 @@ export function ProductCard({ product, onRate, onEdit, isRatingAllowed, t }: Pro
               <Text style={ps.timeText}>{String(t.rating_available_24h ?? 'Rating available in 24 hours')}</Text>
             </View>
           ) : hasReward ? (
-            <View style={{ alignItems: 'flex-end' }}>
+            <View style={{ alignItems: 'flex-end', marginTop: 4 }}>
               {/* text-[10px] text-brand-green font-bold bg-green-50 px-2 py-1 rounded */}
               <View style={ps.rewardTag}>
+                {repPercent < 100 && <FontAwesome5 name="shield-alt" size={8} color="#004D3B" style={{marginRight: 4}}/>}
                 <Text style={ps.rewardTagText}>+{repReward.toFixed(2)}₼</Text>
               </View>
-              {baseReward !== repReward && (
-                <View style={{ flexDirection: 'row', marginTop: 4 }}>
-                  <Text style={ps.strikePriceText}>{baseReward.toFixed(2)}₼</Text>
-                  <Text style={ps.arrowPriceText}> → {repReward.toFixed(2)}₼</Text>
-                </View>
+              {reliability !== undefined && (
+                <Text style={{ fontSize: 9, color: '#9CA3AF', marginTop: 4 }}>
+                   {t.max_reward ? String(t.max_reward) : 'Max:'} {baseReward.toFixed(2)}₼ • {t.trust_score ? String(t.trust_score) : 'Trust:'} <Text style={{ color: repPercent < 60 ? '#EF4444' : repPercent < 90 ? '#EAB308' : '#10B981', fontWeight: 'bold' }}>{repPercent}%</Text>
+                </Text>
               )}
             </View>
           ) : null}
@@ -183,13 +185,15 @@ interface ReceiptItemCardProps {
   onRate: (item: ProductItem, stars: number) => void;
   onEdit: (item: ProductItem) => void;
   isRatingAllowed?: (item: ProductItem) => boolean;
+  reliability?: number;
   t: TranslationDict;
 }
 
-export function ReceiptItemCard({ item, onRate, onEdit, isRatingAllowed, t }: ReceiptItemCardProps) {
+export function ReceiptItemCard({ item, onRate, onEdit, isRatingAllowed, reliability, t }: ReceiptItemCardProps) {
   const cat = getCategoryStyle(item.catKey);
   const repReward = Number(item.reputationAppliedReward ?? item.rewardAmount ?? 0);
   const baseReward = Number(item.baseReward ?? repReward);
+  const repPercent = reliability !== undefined ? Math.round(reliability * 100) : 100;
   const hasReward = repReward > 0 && !item.rated;
   const ratingAllowed = isRatingAllowed ? isRatingAllowed(item) : true;
 
@@ -262,8 +266,15 @@ export function ReceiptItemCard({ item, onRate, onEdit, isRatingAllowed, t }: Re
               <Text style={ps.timeText}>{String(t.rating_available_24h ?? 'Rating available in 24 hours')}</Text>
             </View>
           ) : hasReward ? (
-            <View style={ps.rewardTag}>
-              <Text style={ps.rewardTagText}>+{repReward.toFixed(2)}₼</Text>
+            <View style={{ alignItems: 'flex-end', marginTop: 4 }}>
+              <View style={ps.rewardTag}>
+                <Text style={ps.rewardTagText}>+{repReward.toFixed(2)}₼</Text>
+              </View>
+              {reliability !== undefined && (
+                <Text style={{ fontSize: 9, color: '#9CA3AF', marginTop: 4 }}>
+                   {t.max_reward ? String(t.max_reward) : 'Max:'} {baseReward.toFixed(2)}₼ • {t.trust_score ? String(t.trust_score) : 'Trust:'} <Text style={{ color: repPercent < 60 ? '#EF4444' : repPercent < 90 ? '#EAB308' : '#10B981', fontWeight: 'bold' }}>{repPercent}%</Text>
+                </Text>
+              )}
             </View>
           ) : null}
         </View>

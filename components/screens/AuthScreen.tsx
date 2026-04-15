@@ -298,6 +298,8 @@ const s = StyleSheet.create({
   authContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    width: '100%',
+    height: '100%',
   },
   // bg-brand-green/[0.06] w-96 h-96 rounded-full absolute -top-32 -left-32
   authBgShape1: {

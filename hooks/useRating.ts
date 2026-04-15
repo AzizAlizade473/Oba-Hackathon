@@ -120,13 +120,9 @@ export function useRating({
 
     setSelectedRatingItem(item);
     setSelectedRatingValue(stars);
-    if (stars <= 3) {
-      setFeedbackReason('');
-      setFeedbackComment('');
-      setFeedbackModalOpen(true);
-    } else {
-      submitRatingToBackend(item, stars, '', undefined);
-    }
+    setFeedbackReason('');
+    setFeedbackComment('');
+    setFeedbackModalOpen(true);
   }
 
   function handleEditRating(item: ProductItem): void {
@@ -149,7 +145,7 @@ export function useRating({
   }
 
   function submitFeedback(): void {
-    if (!feedbackReason && !feedbackComment) {
+    if (selectedRatingValue <= 3 && !feedbackReason && !feedbackComment) {
       showToast(getText('reason'), 'error');
       return;
     }
@@ -168,6 +164,8 @@ export function useRating({
     setFeedbackReason,
     feedbackComment,
     setFeedbackComment,
+    selectedRatingValue,
+    setSelectedRatingValue,
     handleRate,
     handleEditRating,
     submitFeedback,

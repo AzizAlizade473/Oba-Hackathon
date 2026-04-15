@@ -366,6 +366,7 @@ export function HomeScreen({
                     t={t}
                     onRate={onRateItem}
                     onEdit={onEditItem}
+                    reliability={user?.reliability as number | undefined}
                   />
                 ))}
             </ScrollView>

@@ -22,6 +22,7 @@ interface ProductsScreenProps {
   onPageChange: (page: number) => void;
   onRate: (product: ProductItem, stars: number) => void;
   onEdit: (product: ProductItem) => void;
+  reliability?: number;
 }
 
 export function ProductsScreen({
@@ -38,6 +39,7 @@ export function ProductsScreen({
   onPageChange,
   onRate,
   onEdit,
+  reliability,
 }: ProductsScreenProps) {
   return (
     <View>
@@ -79,6 +81,7 @@ export function ProductsScreen({
             t={t}
             onRate={onRate}
             onEdit={onEdit}
+            reliability={reliability}
           />
         ))}
       </View>

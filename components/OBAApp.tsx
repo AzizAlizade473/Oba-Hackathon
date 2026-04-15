@@ -82,7 +82,7 @@ export default function OBAApp() {
   // ── Auth View ───────────────────────────────────────────────────────────────
   if (state.currentView === 'auth') {
     return (
-      <>
+      <View style={{ flex: 1 }}>
         <AuthScreen
           authMode={state.authMode}
           setAuthMode={state.setAuthMode}
@@ -96,7 +96,7 @@ export default function OBAApp() {
           getText={getText}
         />
         <Toast visible={state.toast.visible} message={state.toast.message} type={state.toast.type} />
-      </>
+      </View>
     );
   }
 
@@ -129,13 +129,19 @@ export default function OBAApp() {
             <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
               <Path
                 d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-                stroke="#004D3B"
+                stroke={
+                  ((state.user?.reliability as number | undefined) || 0) < 0.6 ? '#DC2626' :
+                  ((state.user?.reliability as number | undefined) || 0) < 0.9 ? '#D97706' : '#004D3B'
+                }
                 strokeWidth={2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={localStyles.trustScoreText}>
+            <Text style={[localStyles.trustScoreText, {
+              color: ((state.user?.reliability as number | undefined) || 0) < 0.6 ? '#DC2626' :
+                     ((state.user?.reliability as number | undefined) || 0) < 0.9 ? '#D97706' : '#004D3B'
+            }]}>
               {`${Math.round((((state.user?.reliability as number | undefined) || 0) * 100))}%`}
             </Text>
           </TouchableOpacity>
@@ -244,8 +250,10 @@ export default function OBAApp() {
         onClose={() => rating.setFeedbackModalOpen(false)}
         feedbackReason={rating.feedbackReason}
         feedbackComment={rating.feedbackComment}
+        selectedRating={rating.selectedRatingValue}
         onReasonChange={rating.setFeedbackReason}
         onCommentChange={rating.setFeedbackComment}
+        onRatingChange={rating.setSelectedRatingValue}
         onSubmit={rating.submitFeedback}
         getText={getText}
         t={t}

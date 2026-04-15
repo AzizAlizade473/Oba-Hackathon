@@ -10,8 +10,10 @@ interface FeedbackModalProps {
   onClose: () => void;
   feedbackReason: string;
   feedbackComment: string;
+  selectedRating: number;
   onReasonChange: (reason: string) => void;
   onCommentChange: (comment: string) => void;
+  onRatingChange: (rating: number) => void;
   onSubmit: () => void;
   getText: (key: string) => string;
   t: TranslationDict;
@@ -41,8 +43,10 @@ export function FeedbackModal({
   onClose,
   feedbackReason,
   feedbackComment,
+  selectedRating,
   onReasonChange,
   onCommentChange,
+  onRatingChange,
   onSubmit,
   getText,
   t,
@@ -69,6 +73,25 @@ export function FeedbackModal({
 
           {/* Title: text-xl font-bold mb-4 */}
           <Text style={styles.title}>{getText('reason')}</Text>
+
+          {/* Stars selector inside modal */}
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <TouchableOpacity
+                key={i}
+                onPress={() => onRatingChange(i)}
+                style={{ paddingHorizontal: 4 }}
+                activeOpacity={0.7}
+              >
+                <FontAwesome5
+                  name="star"
+                  size={32}
+                  solid
+                  color={i <= selectedRating ? '#D4F238' : '#E5E7EB'}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
 
           {/* Feedback options: flex flex-wrap gap-2 mb-4 */}
           <View style={styles.optionsRow}>
@@ -156,6 +179,14 @@ const styles = StyleSheet.create({
     fontWeight: '700', // font-bold
     color: '#111827', // text-gray-900
     marginBottom: 16, // mb-4
+    textAlign: 'center',
+  },
+  // flex row for stars
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   // flex flex-wrap gap-2 mb-4
   optionsRow: {
