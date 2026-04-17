@@ -1,7 +1,7 @@
 // components/screens/HomeScreen.tsx
 // Pixel-perfect match to index.html home tab
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { ReceiptItemCard, ProductItem } from '../ProductCard';
+import { getRatingWaitTime } from '../../constants/helpers';
 import { TranslationDict } from '../../i18n/useTranslation';
 import type { User } from '../../types';
 
 export interface Order {
   id: string;
   fullId: string;
+  branchName?: string;
   date: string;
+  rawDate: string; // ISO string for timer calculations
   day: number;
   month: string;
   time: string;
@@ -77,6 +80,13 @@ export function HomeScreen({
   onLoadUserData,
 }: HomeScreenProps) {
   const balance = user?.balance as number | undefined;
+  const [showReceiptDetails, setShowReceiptDetails] = useState(false);
+
+  const waitTime = selectedReceipt ? getRatingWaitTime(selectedReceipt.rawDate) : null;
+
+  React.useEffect(() => {
+    setShowReceiptDetails(false);
+  }, [selectedReceipt?.fullId]);
 
   return (
     <View>
@@ -348,13 +358,59 @@ export function HomeScreen({
               <View>
                 {/* text-[26px] font-extrabold */}
                 <Text style={{ fontSize: 26, fontWeight: '800', color: '#111827' }}>{selectedReceipt?.total}₼</Text>
-                {/* text-gray-400 text-[13px] */}
-                <Text style={{ color: '#9CA3AF', fontSize: 13 }}>#{selectedReceipt?.id}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ color: '#9CA3AF', fontSize: 13 }}>#{selectedReceipt?.id}</Text>
+                  <TouchableOpacity 
+                    onPress={() => setShowReceiptDetails(!showReceiptDetails)}
+                    style={{ backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#6B7280' }}>
+                      {showReceiptDetails ? (getText('hide') || 'Gizlə') : (getText('details') || 'Detallar')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <TouchableOpacity onPress={() => onSelectReceipt(null)} style={s.closeBtn}>
                 <FontAwesome5 name="times" size={14} color="#6B7280" />
               </TouchableOpacity>
             </View>
+
+            {/* Expandable Details Section */}
+            {showReceiptDetails && (
+              <View style={{ backgroundColor: '#F9FAFB', borderRadius: 16, padding: 12, marginBottom: 20, gap: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                    <FontAwesome5 name="clock" size={14} color="#3B82F6" />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase' }}>{getText('purchase_time') || 'ALIŞ SAATI'}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{selectedReceipt?.time}</Text>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#FDF2F8', alignItems: 'center', justifyContent: 'center' }}>
+                    <FontAwesome5 name="store" size={12} color="#DB2777" />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase' }}>{getText('marketplace') || 'MAĞAZA'}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{selectedReceipt?.branchName || 'OBA Market'}</Text>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: waitTime ? '#FFF7ED' : '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
+                    <FontAwesome5 name={waitTime ? "hourglass-half" : "check-circle"} size={14} color={waitTime ? "#EA580C" : "#10B981"} />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase' }}>{getText('rating_status') || 'RƏY STATUSU'}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: waitTime ? '#EA580C' : '#10B981' }}>
+                      {waitTime ? `${waitTime.formatted} ${getText('left') || 'qaldı'}` : (getText('ready_to_rate') || 'Rəyləməyə hazırdır')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
             <ScrollView showsVerticalScrollIndicator={false}>
               {(selectedReceipt?.items || [])
                 .slice()

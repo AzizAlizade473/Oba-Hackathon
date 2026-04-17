@@ -46,7 +46,9 @@ export async function loadOrdersFromApi(
     return {
       id: orderId?.substring((orderId?.length ?? 4) - 4) ?? '0000',
       fullId: orderId ?? '',
+      branchName: (order.branchName || order.storeName || order.branch || order.marketName) as string | undefined,
       date: formatDate(order.orderDate as string, tAsStringRecord),
+      rawDate: order.orderDate as string,
       day: formatDay(order.orderDate as string),
       month: formatMonth(order.orderDate as string),
       time: formatTime(order.orderDate as string),
@@ -98,6 +100,7 @@ export async function loadOrdersFromApi(
           userRatingId: (userRating?.id as string | undefined) ?? null,
           rating: (p.averageRating as number | undefined) ?? 0,
           reviews: (p.ratingCount as number | undefined) ?? 0,
+          orderCreatedAt: order.orderDate as string | undefined,
         });
       }
     });

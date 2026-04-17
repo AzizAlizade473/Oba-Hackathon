@@ -453,6 +453,7 @@ const ps = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F3F4F6', // border-gray-100
     backgroundColor: '#FFFFFF',
+    marginBottom: 12, // GAP BETWEEN PRODUCTS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
