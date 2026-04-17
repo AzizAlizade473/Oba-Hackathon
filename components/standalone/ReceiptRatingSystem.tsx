@@ -143,6 +143,10 @@ export function ReceiptItemCard({
             </Text>
           ) : (
             <View style={styles.trustInfo}>
+               {/* Extraction logic for title based on stars */}
+               <Text style={[styles.trustLabel, { marginBottom: 2 }]}>
+                 {item.userRating && item.userRating > 3 ? (t.share_thoughts || 'Share thoughts') : (t.reason || 'What is the problem?')}
+               </Text>
                <Text style={styles.trustLabel}>
                  {t.max_reward || 'Max'}: {baseReward.toFixed(2)}₼ • {t.trust_score || 'Trust'}: 
                  <Text style={{ color: trustColor, fontWeight: 'bold' }}> {repPercent}%</Text>

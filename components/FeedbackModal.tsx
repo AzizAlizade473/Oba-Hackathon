@@ -72,7 +72,9 @@ export function FeedbackModal({
           <View style={styles.dragHandle} />
 
           {/* Title: text-xl font-bold mb-4 */}
-          <Text style={styles.title}>{getText('reason')}</Text>
+          <Text style={styles.title}>
+            {selectedRating > 3 ? getText('share_thoughts') : getText('reason')}
+          </Text>
 
           {/* Stars selector inside modal */}
           <View style={styles.starsRow}>
