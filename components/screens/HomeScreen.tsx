@@ -2,6 +2,7 @@
 // Pixel-perfect match to index.html home tab
 
 import React from 'react';
+// Branch location is displayed on each receipt row
 import {
   View,
   Text,
@@ -252,9 +253,15 @@ export function HomeScreen({
                 <Text style={s.dateBadgeMonth}>{getExactMonth(bill.month)}</Text>
                 <Text style={s.dateBadgeDay}>{bill.day}</Text>
               </View>
-              <View style={{ marginLeft: 12 }}>
+              <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={s.receiptTitle}>{getText('purchase')} #{bill.id}</Text>
                 <Text style={s.receiptSub}>{bill.items.length} {getText('product')} • {bill.time}</Text>
+                {bill.branchName ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+                    <FontAwesome5 name="map-marker-alt" size={9} color="#10B981" />
+                    <Text style={{ fontSize: 10, color: '#6B7280', marginLeft: 4, fontWeight: '500' }}>{bill.branchName}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -290,9 +297,15 @@ export function HomeScreen({
                     <Text style={s.dateBadgeMonth}>{getExactMonth(bill.month)}</Text>
                     <Text style={s.dateBadgeDay}>{bill.day}</Text>
                   </View>
-                  <View style={{ marginLeft: 12 }}>
+                  <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text style={s.receiptTitle}>{getText('purchase')} #{bill.id}</Text>
                     <Text style={s.receiptSub}>{bill.items.length} {getText('product')} • {bill.time}</Text>
+                    {bill.branchName ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+                        <FontAwesome5 name="map-marker-alt" size={9} color="#10B981" />
+                        <Text style={{ fontSize: 10, color: '#6B7280', marginLeft: 4, fontWeight: '500' }}>{bill.branchName}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
@@ -352,6 +365,12 @@ export function HomeScreen({
                 <Text style={{ fontSize: 26, fontWeight: '800', color: '#111827' }}>{selectedReceipt?.total}₼</Text>
                 {/* text-gray-400 text-[13px] */}
                 <Text style={{ color: '#9CA3AF', fontSize: 13 }}>#{selectedReceipt?.id}</Text>
+                {selectedReceipt?.branchName ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <FontAwesome5 name="map-marker-alt" size={10} color="#10B981" />
+                    <Text style={{ fontSize: 12, color: '#6B7280', marginLeft: 5, fontWeight: '600' }}>{selectedReceipt.branchName}</Text>
+                  </View>
+                ) : null}
               </View>
               <TouchableOpacity onPress={() => onSelectReceipt(null)} style={s.closeBtn}>
                 <FontAwesome5 name="times" size={14} color="#6B7280" />

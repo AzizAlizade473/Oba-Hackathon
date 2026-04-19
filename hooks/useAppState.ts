@@ -193,15 +193,22 @@ export function useAppState({ getText, t, setLangState }: UseAppStateProps) {
   async function loadProductDetail(product: ProductItem | any): Promise<void> {
     try {
       setLoading(true);
-      // We already have detailed info for top products from the loadTopProductsFromApi mapper.
-      // And regular products usually don't have public comments unless admin.
+      // Fetch detailed product data from the API to get comments and ratingDistribution
+      let apiData: Record<string, unknown> = {};
+      try {
+        const response = await api.getProduct(product.id);
+        apiData = (response.data ?? response) as Record<string, unknown>;
+      } catch {
+        console.warn('Could not fetch product detail from API, using local data');
+      }
+
       const detailedProduct = {
         ...product,
-        sku: product.sku,
-        averageRating: parseFloat(String(product.averageRating ?? product.rating ?? 0)),
-        ratingCount: product.ratingCount ?? product.reviews ?? 0,
-        comments: product.comments ?? [],
-        ratingDistribution: product.ratingDistribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        sku: (apiData.sku as string | undefined) ?? product.sku,
+        averageRating: parseFloat(String(apiData.averageRating ?? product.averageRating ?? product.rating ?? 0)),
+        ratingCount: (apiData.ratingCount as number | undefined) ?? product.ratingCount ?? product.reviews ?? 0,
+        comments: (apiData.comments as Array<{ id: string; name: string; score: number; comment: string; createdAt?: string }>) ?? product.comments ?? [],
+        ratingDistribution: (apiData.ratingDistribution as Record<number, number> | undefined) ?? product.ratingDistribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       };
       setSelectedProductDetail(detailedProduct);
       setProductDetailModalOpen(true);
